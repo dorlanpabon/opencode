@@ -1,4 +1,4 @@
-import { nativeImage } from "electron"
+import electron from "electron"
 
 // Native browser surfaces ignore a parent View's clip path. Cover only the
 // pixels outside the bottom arcs; never resize or style the page itself.
@@ -18,6 +18,6 @@ export function createCornerImages(color: readonly [number, number, number, numb
         pixels[offset + 3] = alpha
       }
     }
-    return nativeImage.createFromBitmap(pixels, { width: size, height: size, scaleFactor: scale })
+    return electron.nativeImage.createFromBitmap(pixels, { width: size, height: size, scaleFactor: scale })
   })
 }

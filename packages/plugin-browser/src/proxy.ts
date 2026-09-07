@@ -182,7 +182,7 @@ async function forward(
   const agent = new Agent({ keepAlive: false, maxSockets: 1 })
   try {
     const tunnel = await connect(target(url), abort.signal)
-    agent.createConnection = () => tunnel
+    Object.assign(agent, { createConnection: () => tunnel })
     const headers = forwardedHeaders(incoming.headers)
     headers.host = url.host
     headers.connection = "close"
