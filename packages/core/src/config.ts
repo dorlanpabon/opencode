@@ -3,7 +3,7 @@ export * as Config from "./config.js"
 import { makeLocationNode } from "@opencode-ai/util/effect/app-node"
 import path from "path"
 import { isDeepStrictEqual } from "node:util"
-import { type ParseError, parse } from "jsonc-parser"
+import { applyEdits, modify, type ParseError, parse } from "jsonc-parser"
 import { Context, Effect, FiberMap, Layer, Option, PubSub, Ref, Schema, Semaphore, Stream } from "effect"
 import {
   AgentsDirectory,
@@ -35,6 +35,10 @@ export function latest<K extends keyof Info>(entries: readonly Entry[], key: K):
 export interface Interface {
   /** Returns location config documents and discovery sources from lowest to highest priority. */
   readonly entries: () => Effect.Effect<Entry[]>
+  /** Returns the merged global configuration. */
+  readonly global: () => Effect.Effect<Info>
+  /** Merges fields into the writable global configuration document. */
+  readonly updateGlobal: (patch: Info) => Effect.Effect<Info, Error | FSUtil.Error>
   /**
    * Streams raw filesystem updates under config roots. Config owns root
    * topology and watch reconciliation; domain owners filter this feed for the
@@ -72,6 +76,8 @@ export const testLayer = (initial: Entry[] = []) =>
       const updates = yield* PubSub.unbounded<Watcher.Update>()
       const service = Test.of({
         entries: () => Ref.get(entries),
+        global: () => Effect.succeed(new Info({})),
+        updateGlobal: (patch) => Effect.succeed(patch),
         changes: () => Stream.fromPubSub(updates),
         setEntries: (next) => Ref.set(entries, next),
         emitChange: (update) => PubSub.publish(updates, update).pipe(Effect.asVoid),
@@ -88,11 +94,21 @@ export const layer = (options?: Options) =>
       const location = yield* Location.Service
       const watcher = yield* Watcher.Service
       const bus = yield* Bus.Service
+      const globalPaths = yield* Global.Service
       const credentials = yield* Credential.Service
       const wellknown = yield* WellKnown.Service
       const reloadLock = Semaphore.makeUnsafe(1)
+      const updateLock = Semaphore.makeUnsafe(1)
       const decodeOptions = { errors: "all", onExcessProperty: "ignore", propertyOrder: "original" } as const
       const decodeInfo = Schema.decodeUnknownOption(Info, decodeOptions)
+      const substitute = (input: Parameters<typeof ConfigVariable.substitute>[0]) =>
+        ConfigVariable.substitute(input).pipe(Effect.provideService(FSUtil.Service, fs))
+      const discover = () =>
+        ConfigDiscovery.discover(options).pipe(
+          Effect.provideService(FSUtil.Service, fs),
+          Effect.provideService(Global.Service, globalPaths),
+          Effect.provideService(Location.Service, location),
+        )
       const parseInfo = Effect.fn("Config.parseInfo")(function* (text: string, source: string) {
         const errors: ParseError[] = []
         const input: unknown = parse(text, errors, { allowTrailingComma: true })
@@ -128,7 +144,7 @@ export const layer = (options?: Options) =>
       const loadFile = Effect.fnUntraced(function* (filepath: string) {
         const text = yield* fs.readFileStringSafe(filepath)
         if (text === undefined) return
-        const substituted = yield* ConfigVariable.substitute({ type: "path", path: filepath, text })
+        const substituted = yield* substitute({ type: "path", path: filepath, text })
         const info = yield* parseInfo(substituted, filepath)
         if (!info) return
         return new Document({ type: "document", path: AbsolutePath.make(filepath), info })
@@ -150,7 +166,7 @@ export const layer = (options?: Options) =>
             ),
           )
         return yield* Effect.forEach(configs, (config) =>
-          ConfigVariable.substitute({
+          substitute({
             type: "virtual",
             source: entry.origin,
             dir: entry.origin,
@@ -199,7 +215,7 @@ export const layer = (options?: Options) =>
           : []
         const content =
           options?.content !== undefined
-            ? yield* ConfigVariable.substitute({
+            ? yield* substitute({
                 type: "virtual",
                 source: "OPENCODE_CONFIG_CONTENT",
                 dir: location.directory,
@@ -233,7 +249,7 @@ export const layer = (options?: Options) =>
         ]
       })
 
-      const initial = yield* ConfigDiscovery.discover(options)
+      const initial = yield* discover()
       let configs = yield* load(initial)
       const updates = yield* PubSub.unbounded<Watcher.Update>()
       const reloads = yield* PubSub.sliding<void>(1)
@@ -259,7 +275,7 @@ export const layer = (options?: Options) =>
 
       const reload = Effect.fn("Config.reload")(
         function* () {
-          const sources = yield* ConfigDiscovery.discover(options)
+          const sources = yield* discover()
           const next = yield* load(sources)
           yield* reconcile(sources)
           if (isDeepStrictEqual(configs, next)) return
@@ -267,6 +283,46 @@ export const layer = (options?: Options) =>
           yield* bus.publish(Event.Updated, {})
         },
         (effect) => reloadLock.withPermit(effect),
+      )
+
+      const global = Effect.fn("Config.global")(function* () {
+        const sources = yield* discover()
+        if (!sources.global) return new Info({})
+        const entries = yield* loadDirectory(sources.global).pipe(Effect.orDie)
+        return new Info(
+          Object.assign(
+            {},
+            ...entries.filter((entry): entry is Document => entry.type === "document").map((entry) => entry.info),
+          ),
+        )
+      })
+
+      const updateGlobal = Effect.fn("Config.updateGlobal")(
+        function* (patch: Info) {
+          const sources = yield* discover()
+          if (!sources.global) return yield* Effect.fail(new Error("Global configuration is disabled"))
+          const json = path.join(sources.global, "opencode.json")
+          const jsonc = path.join(sources.global, "opencode.jsonc")
+          const file = (yield* fs.isFile(jsonc)) ? jsonc : (yield* fs.isFile(json)) ? json : json
+          const text = (yield* fs.readFileStringSafe(file)) ?? "{}"
+          const errors: ParseError[] = []
+          parse(text, errors, { allowTrailingComma: true })
+          if (errors.length) return yield* Effect.fail(new Error(`Invalid global configuration: ${file}`))
+          const updated = Object.entries(patch).reduce(
+            (current, [key, value]) =>
+              applyEdits(
+                current,
+                modify(current, [key], value, { formattingOptions: { tabSize: 2, insertSpaces: true } }),
+              ),
+            text,
+          )
+          const temporary = file + ".tmp"
+          yield* fs.writeWithDirs(temporary, updated.endsWith("\n") ? updated : updated + "\n", 0o600)
+          yield* fs.rename(temporary, file)
+          yield* bus.publish(Event.Updated, {})
+          return yield* global()
+        },
+        (effect) => updateLock.withPermit(effect),
       )
 
       // Subscribe eagerly so synchronous watch readiness isn't dropped.
@@ -321,6 +377,8 @@ export const layer = (options?: Options) =>
         entries: Effect.fnUntraced(function* () {
           return configs
         }),
+        global,
+        updateGlobal,
         changes: () => Stream.fromPubSub(updates),
       })
     }),

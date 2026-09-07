@@ -53,11 +53,12 @@ function runAll(list: Array<() => Promise<unknown>>) {
   return Promise.allSettled(list.map((item) => item()))
 }
 
-export const loadGlobalConfigQuery = (scope: ServerScope) =>
+type ConfigApi = Pick<ServerApi["config"], "global">
+
+export const loadGlobalConfigQuery = (scope: ServerScope, config: ConfigApi) =>
   queryOptions({
     queryKey: [scope, "config"],
-    // TODO: Restore config loading when the V2 client exposes a config API.
-    queryFn: async (): Promise<Config> => ({}),
+    queryFn: async (): Promise<Config> => config.global(),
   })
 
 type ProjectApi = {
@@ -105,6 +106,7 @@ export const loadProjectsQuery = (scope: ServerScope, projects: ProjectApi, work
 
 export async function bootstrapGlobal(input: {
   serverAPI: {
+    readonly config: ConfigApi
     readonly location: LocationApi
     readonly project: ProjectApi
     readonly worktree: WorktreeApi
@@ -114,7 +116,7 @@ export async function bootstrapGlobal(input: {
   queryClient: QueryClient
 }) {
   const slow = [
-    () => input.queryClient.fetchQuery(loadGlobalConfigQuery(input.scope)),
+    () => input.queryClient.fetchQuery(loadGlobalConfigQuery(input.scope, input.serverAPI.config)),
     () => input.queryClient.fetchQuery(loadPathQuery(input.scope, null, input.serverAPI.location)),
     () =>
       input.queryClient

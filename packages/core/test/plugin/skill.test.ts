@@ -14,6 +14,8 @@ const config = (plugins: Info["plugins"] = []) =>
     Config.Service,
     Config.Service.of({
       entries: () => Effect.succeed([new Document({ type: "document", info: new Info({ plugins }) })]),
+      global: () => Effect.succeed(new Info({})),
+      updateGlobal: (patch) => Effect.succeed(patch),
       changes: () => Stream.never,
     }),
   )

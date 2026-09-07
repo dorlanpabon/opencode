@@ -144,7 +144,7 @@ export type ProviderListResponse = {
 export type ProviderAuthResponse = Record<string, unknown>
 
 export type Config = {
-  model?: string
+  model?: string | { providerID: string; model: string; variant?: string }
   small_model?: string
   default_agent?: string
   username?: string

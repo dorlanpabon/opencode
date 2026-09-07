@@ -264,6 +264,9 @@ import type {
   WebsearchProvidersOutput,
   WebsearchQueryInput,
   WebsearchQueryOutput,
+  ConfigGlobalOutput,
+  ConfigUpdateInput,
+  ConfigUpdateOutput,
   ConfigGetInput,
   ConfigGetOutput,
 } from "./types.js"
@@ -2180,6 +2183,23 @@ export function make(options: ClientOptions) {
         ),
     },
     config: {
+      global: (requestOptions?: RequestOptions) =>
+        request<ConfigGlobalOutput>(
+          { method: "GET", path: `/api/config/global`, successStatus: 200, declaredStatuses: [400, 401], empty: false },
+          requestOptions,
+        ),
+      update: (input: ConfigUpdateInput, requestOptions?: RequestOptions) =>
+        request<ConfigUpdateOutput>(
+          {
+            method: "PATCH",
+            path: `/api/config/global`,
+            body: input["payload"],
+            successStatus: 200,
+            declaredStatuses: [400, 401, 500],
+            empty: false,
+          },
+          requestOptions,
+        ),
       get: (input?: ConfigGetInput, requestOptions?: RequestOptions) =>
         request<ConfigGetOutput>(
           {

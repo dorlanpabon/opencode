@@ -2085,6 +2085,13 @@ export interface WebsearchApi<E = never> {
   readonly query: WebsearchQueryOperation<E>
 }
 
+export type ConfigGlobalOutput = Config.Info
+export type ConfigGlobalOperation<E = never> = () => Effect.Effect<ConfigGlobalOutput, E>
+
+export type ConfigUpdateInput = { readonly payload: Config.Info }
+export type ConfigUpdateOutput = Config.Info
+export type ConfigUpdateOperation<E = never> = (input: ConfigUpdateInput) => Effect.Effect<ConfigUpdateOutput, E>
+
 export type ConfigGetInput = {
   readonly location?: { readonly directory?: string | undefined; readonly workspace?: string | undefined } | undefined
 }
@@ -2092,6 +2099,8 @@ export type ConfigGetOutput = ReadonlyArray<Config.Entry>
 export type ConfigGetOperation<E = never> = (input?: ConfigGetInput) => Effect.Effect<ConfigGetOutput, E>
 
 export interface ConfigApi<E = never> {
+  readonly global: ConfigGlobalOperation<E>
+  readonly update: ConfigUpdateOperation<E>
   readonly get: ConfigGetOperation<E>
 }
 

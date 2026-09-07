@@ -38,7 +38,7 @@ export const loadLspQuery = (scope: ServerScope, directory: string) =>
 
 function makeQueryOptionsApi(scope: ServerScope, serverAPI: () => ServerApi) {
   return {
-    globalConfig: () => loadGlobalConfigQuery(scope),
+    globalConfig: () => loadGlobalConfigQuery(scope, serverAPI().config),
     path: () => loadPathQuery(scope, null, serverAPI().location),
     lsp: (directory: PathKey) => loadLspQuery(scope, directory),
   }
@@ -241,12 +241,12 @@ export function createServerSyncContextInner(serverSDK: ServerSDK, data: Data) {
 
   const updateConfigMutation = useMutation(() => ({
     mutationFn: async (config: Config) => {
-      // TODO: Restore config updates when the V2 client exposes a config API.
-      // await serverSDK.api.config.update({ config })
-      throw new Error(`Config updates are unavailable: ${Object.keys(config).length} fields were not saved`)
+      return serverSDK.api.config.update({ payload: config })
     },
-    onSuccess: () => {
-      bootstrap.refetch()
+    onSuccess: (config) => {
+      setGlobalStore("config", config)
+      queryClient.setQueryData([serverSDK.scope, "config"], config)
+      void bootstrap.refetch()
       data.location.provider.invalidate()
       data.location.model.invalidate()
       void Promise.all([data.location.provider.sync(), data.location.model.sync()])

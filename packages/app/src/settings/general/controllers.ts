@@ -57,17 +57,31 @@ export function createCustomInstructionsSettingsController(server: Accessor<Serv
     setStore("draft", saved())
   })
   let timer: ReturnType<typeof setTimeout> | undefined
-  onCleanup(() => {
+  let pending: string | undefined
+  const save = () => {
     if (timer !== undefined) clearTimeout(timer)
+    timer = undefined
+    const next = pending
+    pending = undefined
+    if (next === undefined) return
+    void serverCtx()
+      ?.sync.updateConfig({ customInstructions: next })
+      .then(() => {
+        if (store.draft === next && pending === undefined) setStore("dirty", false)
+      })
+      .catch(() => undefined)
+  }
+  onCleanup(() => {
+    save()
   })
   return {
     draft: () => store.draft,
+    flush: save,
     update: (next: string) => {
       setStore({ draft: next, dirty: true })
       if (timer !== undefined) clearTimeout(timer)
-      timer = setTimeout(() => {
-        void serverCtx()?.sync.updateConfig({ customInstructions: next }).catch(() => undefined)
-      }, 500)
+      pending = next
+      timer = setTimeout(save, 500)
     },
   }
 }

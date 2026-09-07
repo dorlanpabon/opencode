@@ -14,6 +14,8 @@ describe("ConfigEntryObserver", () => {
       const reloaded = yield* Deferred.make<void>()
       const config = Config.Service.of({
         entries: () => Ref.get(current),
+        global: () => Effect.succeed(new Info({})),
+        updateGlobal: (patch) => Effect.succeed(patch),
         changes: () => Stream.empty,
       })
       const event = {

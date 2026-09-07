@@ -1986,6 +1986,7 @@ export type ConfigEntry =
           }
         }
         instructions?: Array<string>
+        customInstructions?: string
         references?: {
           [x: string]:
             | string
@@ -6316,6 +6317,534 @@ export type WebsearchQueryInput = {
 export type WebsearchQueryOutput = {
   location: { directory: string; workspaceID?: string; project: { id: string; directory: string; canonical: string } }
   data: { providerID: string; results: Array<WebSearchResult> }
+}
+
+export type ConfigGlobalOutput = {
+  $schema?: string
+  shell?: string
+  model?: string | { providerID: string; model: string; variant?: string }
+  default_agent?: string
+  update?: "disable" | "notify"
+  share?: "manual" | "auto" | "disabled"
+  enterprise?: { url?: string }
+  username?: string
+  permissions?: PermissionRuleset
+  agents?: {
+    [x: string]: {
+      model?: string | { providerID: string; model: string; variant?: string }
+      request?: { headers?: { [x: string]: string }; body?: { [x: string]: JsonValue } }
+      system?: string
+      description?: string
+      mode?: "subagent" | "primary" | "all"
+      hidden?: boolean
+      color?: string
+      steps?: number
+      disabled?: boolean
+      permissions?: PermissionRuleset
+    }
+  }
+  snapshots?: boolean
+  watcher?: { ignore?: Array<string> }
+  formatter?:
+    | boolean
+    | {
+        [x: string]: {
+          disabled?: boolean
+          command?: Array<string>
+          environment?: { [x: string]: string }
+          extensions?: Array<string>
+        }
+      }
+  lsp?:
+    | boolean
+    | {
+        [x: string]:
+          | { disabled: true }
+          | {
+              command: Array<string>
+              extensions?: Array<string>
+              disabled?: boolean
+              env?: { [x: string]: string }
+              initialization?: { [x: string]: JsonValue }
+            }
+      }
+  media?: { image?: { auto_resize?: boolean; max_width?: number; max_height?: number; max_base64_bytes?: number } }
+  tool_output?: { max_lines?: number; max_bytes?: number }
+  mcp?: {
+    timeout?: { startup?: number; catalog?: number; execution?: number }
+    servers?: {
+      [x: string]:
+        | {
+            type: "local"
+            command: Array<string>
+            cwd?: string
+            environment?: { [x: string]: string }
+            disabled?: boolean
+            codemode?: boolean
+            timeout?: { startup?: number; catalog?: number; execution?: number }
+          }
+        | {
+            type: "remote"
+            url: string
+            headers?: { [x: string]: string }
+            oauth?:
+              | {
+                  client_id?: string
+                  client_secret?: string
+                  scope?: string
+                  callback_port?: number
+                  redirect_uri?: string
+                }
+              | false
+            disabled?: boolean
+            codemode?: boolean
+            timeout?: { startup?: number; catalog?: number; execution?: number }
+          }
+    }
+  }
+  compaction?: { auto?: boolean; keep?: { tokens?: number }; buffer?: number }
+  infinite?: { maxIterations?: number; maxHours?: number; sentinel?: string; todoDetection?: boolean }
+  skills?: Array<string>
+  commands?: {
+    [x: string]: {
+      template: string
+      description?: string
+      agent?: string
+      model?: string | { providerID: string; model: string; variant?: string }
+      subagent?: boolean
+      subtask?: boolean
+    }
+  }
+  instructions?: Array<string>
+  customInstructions?: string
+  references?: {
+    [x: string]:
+      | string
+      | { repository: string; branch?: string; description?: string; hidden?: boolean }
+      | { path: string; description?: string; hidden?: boolean }
+  }
+  websearch?: false | { provider: "random" | (string & {}) }
+  plugins?: Array<string | { package: string; options?: { [x: string]: JsonValue } }>
+  warming?: boolean | { prompt?: string; interval?: string; duration?: string }
+  providers?: {
+    [x: string]: {
+      canonical?: string
+      name?: string
+      env?: Array<string>
+      package?: string
+      settings?: { [x: string]: JsonValue }
+      headers?: { [x: string]: string }
+      body?: { [x: string]: JsonValue }
+      models?: {
+        [x: string]: {
+          modelID?: string
+          family?: string
+          name?: string
+          compatibility?: ModelCompatibility
+          package?: string
+          settings?: { [x: string]: JsonValue }
+          headers?: { [x: string]: string }
+          body?: { [x: string]: JsonValue }
+          capabilities?: ModelCapabilities
+          variants?: Array<{
+            id: string
+            settings?: { [x: string]: JsonValue }
+            headers?: { [x: string]: string }
+            body?: { [x: string]: JsonValue }
+          }>
+          cost?:
+            | {
+                tier?: { type: "context"; size: number }
+                input: MoneyUSDPerMillionTokens
+                output: MoneyUSDPerMillionTokens
+                cache?: { read?: MoneyUSDPerMillionTokens; write?: MoneyUSDPerMillionTokens }
+              }
+            | Array<{
+                tier?: { type: "context"; size: number }
+                input: MoneyUSDPerMillionTokens
+                output: MoneyUSDPerMillionTokens
+                cache?: { read?: MoneyUSDPerMillionTokens; write?: MoneyUSDPerMillionTokens }
+              }>
+          disabled?: boolean
+          limit?: { context?: number; input?: number; output?: number }
+        }
+      }
+    }
+  }
+  experimental?: {
+    portable_shell_scanner?: boolean
+    subagent_depth?: number
+    policies?: Array<{ action: "provider.use"; resource: string; effect: "allow" | "deny" }>
+  }
+}
+
+export type ConfigUpdateInput = {
+  readonly payload: {
+    readonly $schema?: string
+    readonly shell?: string
+    readonly model?: string | { readonly providerID: string; readonly model: string; readonly variant?: string }
+    readonly default_agent?: string
+    readonly update?: "disable" | "notify"
+    readonly share?: "manual" | "auto" | "disabled"
+    readonly enterprise?: { readonly url?: string }
+    readonly username?: string
+    readonly permissions?: ReadonlyArray<{
+      readonly action: string
+      readonly resource: string
+      readonly effect: "allow" | "deny" | "ask"
+    }>
+    readonly agents?: {
+      readonly [x: string]: {
+        readonly model?: string | { readonly providerID: string; readonly model: string; readonly variant?: string }
+        readonly request?: {
+          readonly headers?: { readonly [x: string]: string }
+          readonly body?: { readonly [x: string]: JsonValue }
+        }
+        readonly system?: string
+        readonly description?: string
+        readonly mode?: "subagent" | "primary" | "all"
+        readonly hidden?: boolean
+        readonly color?: string
+        readonly steps?: number
+        readonly disabled?: boolean
+        readonly permissions?: ReadonlyArray<{
+          readonly action: string
+          readonly resource: string
+          readonly effect: "allow" | "deny" | "ask"
+        }>
+      }
+    }
+    readonly snapshots?: boolean
+    readonly watcher?: { readonly ignore?: ReadonlyArray<string> }
+    readonly formatter?:
+      | boolean
+      | {
+          readonly [x: string]: {
+            readonly disabled?: boolean
+            readonly command?: ReadonlyArray<string>
+            readonly environment?: { readonly [x: string]: string }
+            readonly extensions?: ReadonlyArray<string>
+          }
+        }
+    readonly lsp?:
+      | boolean
+      | {
+          readonly [x: string]:
+            | { readonly disabled: true }
+            | {
+                readonly command: ReadonlyArray<string>
+                readonly extensions?: ReadonlyArray<string>
+                readonly disabled?: boolean
+                readonly env?: { readonly [x: string]: string }
+                readonly initialization?: { readonly [x: string]: JsonValue }
+              }
+        }
+    readonly media?: {
+      readonly image?: {
+        readonly auto_resize?: boolean
+        readonly max_width?: number
+        readonly max_height?: number
+        readonly max_base64_bytes?: number
+      }
+    }
+    readonly tool_output?: { readonly max_lines?: number; readonly max_bytes?: number }
+    readonly mcp?: {
+      readonly timeout?: { readonly startup?: number; readonly catalog?: number; readonly execution?: number }
+      readonly servers?: {
+        readonly [x: string]:
+          | {
+              readonly type: "local"
+              readonly command: ReadonlyArray<string>
+              readonly cwd?: string
+              readonly environment?: { readonly [x: string]: string }
+              readonly disabled?: boolean
+              readonly codemode?: boolean
+              readonly timeout?: { readonly startup?: number; readonly catalog?: number; readonly execution?: number }
+            }
+          | {
+              readonly type: "remote"
+              readonly url: string
+              readonly headers?: { readonly [x: string]: string }
+              readonly oauth?:
+                | {
+                    readonly client_id?: string
+                    readonly client_secret?: string
+                    readonly scope?: string
+                    readonly callback_port?: number
+                    readonly redirect_uri?: string
+                  }
+                | false
+              readonly disabled?: boolean
+              readonly codemode?: boolean
+              readonly timeout?: { readonly startup?: number; readonly catalog?: number; readonly execution?: number }
+            }
+      }
+    }
+    readonly compaction?: {
+      readonly auto?: boolean
+      readonly keep?: { readonly tokens?: number }
+      readonly buffer?: number
+    }
+    readonly infinite?: {
+      readonly maxIterations?: number
+      readonly maxHours?: number
+      readonly sentinel?: string
+      readonly todoDetection?: boolean
+    }
+    readonly skills?: ReadonlyArray<string>
+    readonly commands?: {
+      readonly [x: string]: {
+        readonly template: string
+        readonly description?: string
+        readonly agent?: string
+        readonly model?: string | { readonly providerID: string; readonly model: string; readonly variant?: string }
+        readonly subagent?: boolean
+        readonly subtask?: boolean
+      }
+    }
+    readonly instructions?: ReadonlyArray<string>
+    readonly customInstructions?: string
+    readonly references?: {
+      readonly [x: string]:
+        | string
+        | {
+            readonly repository: string
+            readonly branch?: string
+            readonly description?: string
+            readonly hidden?: boolean
+          }
+        | { readonly path: string; readonly description?: string; readonly hidden?: boolean }
+    }
+    readonly websearch?: false | { readonly provider: "random" | (string & {}) }
+    readonly plugins?: ReadonlyArray<
+      string | { readonly package: string; readonly options?: { readonly [x: string]: JsonValue } }
+    >
+    readonly warming?: boolean | { readonly prompt?: string; readonly interval?: string; readonly duration?: string }
+    readonly providers?: {
+      readonly [x: string]: {
+        readonly canonical?: string
+        readonly name?: string
+        readonly env?: ReadonlyArray<string>
+        readonly package?: string
+        readonly settings?: { readonly [x: string]: JsonValue }
+        readonly headers?: { readonly [x: string]: string }
+        readonly body?: { readonly [x: string]: JsonValue }
+        readonly models?: {
+          readonly [x: string]: {
+            readonly modelID?: string
+            readonly family?: string
+            readonly name?: string
+            readonly compatibility?: {
+              readonly reasoningField?: "reasoning" | "reasoning_content" | "reasoning_text" | (string & {})
+              readonly requireReasoning?: boolean
+              readonly maxTokensField?: "max_completion_tokens" | "max_tokens"
+              readonly requireFinishReason?: boolean
+              readonly requireAssistantAfterTool?: boolean
+            }
+            readonly package?: string
+            readonly settings?: { readonly [x: string]: JsonValue }
+            readonly headers?: { readonly [x: string]: string }
+            readonly body?: { readonly [x: string]: JsonValue }
+            readonly capabilities?: {
+              readonly tools: boolean
+              readonly input: ReadonlyArray<string>
+              readonly output: ReadonlyArray<string>
+              readonly responsesWebsockets?: boolean
+            }
+            readonly variants?: ReadonlyArray<{
+              readonly id: string
+              readonly settings?: { readonly [x: string]: JsonValue }
+              readonly headers?: { readonly [x: string]: string }
+              readonly body?: { readonly [x: string]: JsonValue }
+            }>
+            readonly cost?:
+              | {
+                  readonly tier?: { readonly type: "context"; readonly size: number }
+                  readonly input: number
+                  readonly output: number
+                  readonly cache?: { readonly read?: number; readonly write?: number }
+                }
+              | ReadonlyArray<{
+                  readonly tier?: { readonly type: "context"; readonly size: number }
+                  readonly input: number
+                  readonly output: number
+                  readonly cache?: { readonly read?: number; readonly write?: number }
+                }>
+            readonly disabled?: boolean
+            readonly limit?: { readonly context?: number; readonly input?: number; readonly output?: number }
+          }
+        }
+      }
+    }
+    readonly experimental?: {
+      readonly portable_shell_scanner?: boolean
+      readonly subagent_depth?: number
+      readonly policies?: ReadonlyArray<{
+        readonly action: "provider.use"
+        readonly resource: string
+        readonly effect: "allow" | "deny"
+      }>
+    }
+  }
+}
+
+export type ConfigUpdateOutput = {
+  $schema?: string
+  shell?: string
+  model?: string | { providerID: string; model: string; variant?: string }
+  default_agent?: string
+  update?: "disable" | "notify"
+  share?: "manual" | "auto" | "disabled"
+  enterprise?: { url?: string }
+  username?: string
+  permissions?: PermissionRuleset
+  agents?: {
+    [x: string]: {
+      model?: string | { providerID: string; model: string; variant?: string }
+      request?: { headers?: { [x: string]: string }; body?: { [x: string]: JsonValue } }
+      system?: string
+      description?: string
+      mode?: "subagent" | "primary" | "all"
+      hidden?: boolean
+      color?: string
+      steps?: number
+      disabled?: boolean
+      permissions?: PermissionRuleset
+    }
+  }
+  snapshots?: boolean
+  watcher?: { ignore?: Array<string> }
+  formatter?:
+    | boolean
+    | {
+        [x: string]: {
+          disabled?: boolean
+          command?: Array<string>
+          environment?: { [x: string]: string }
+          extensions?: Array<string>
+        }
+      }
+  lsp?:
+    | boolean
+    | {
+        [x: string]:
+          | { disabled: true }
+          | {
+              command: Array<string>
+              extensions?: Array<string>
+              disabled?: boolean
+              env?: { [x: string]: string }
+              initialization?: { [x: string]: JsonValue }
+            }
+      }
+  media?: { image?: { auto_resize?: boolean; max_width?: number; max_height?: number; max_base64_bytes?: number } }
+  tool_output?: { max_lines?: number; max_bytes?: number }
+  mcp?: {
+    timeout?: { startup?: number; catalog?: number; execution?: number }
+    servers?: {
+      [x: string]:
+        | {
+            type: "local"
+            command: Array<string>
+            cwd?: string
+            environment?: { [x: string]: string }
+            disabled?: boolean
+            codemode?: boolean
+            timeout?: { startup?: number; catalog?: number; execution?: number }
+          }
+        | {
+            type: "remote"
+            url: string
+            headers?: { [x: string]: string }
+            oauth?:
+              | {
+                  client_id?: string
+                  client_secret?: string
+                  scope?: string
+                  callback_port?: number
+                  redirect_uri?: string
+                }
+              | false
+            disabled?: boolean
+            codemode?: boolean
+            timeout?: { startup?: number; catalog?: number; execution?: number }
+          }
+    }
+  }
+  compaction?: { auto?: boolean; keep?: { tokens?: number }; buffer?: number }
+  infinite?: { maxIterations?: number; maxHours?: number; sentinel?: string; todoDetection?: boolean }
+  skills?: Array<string>
+  commands?: {
+    [x: string]: {
+      template: string
+      description?: string
+      agent?: string
+      model?: string | { providerID: string; model: string; variant?: string }
+      subagent?: boolean
+      subtask?: boolean
+    }
+  }
+  instructions?: Array<string>
+  customInstructions?: string
+  references?: {
+    [x: string]:
+      | string
+      | { repository: string; branch?: string; description?: string; hidden?: boolean }
+      | { path: string; description?: string; hidden?: boolean }
+  }
+  websearch?: false | { provider: "random" | (string & {}) }
+  plugins?: Array<string | { package: string; options?: { [x: string]: JsonValue } }>
+  warming?: boolean | { prompt?: string; interval?: string; duration?: string }
+  providers?: {
+    [x: string]: {
+      canonical?: string
+      name?: string
+      env?: Array<string>
+      package?: string
+      settings?: { [x: string]: JsonValue }
+      headers?: { [x: string]: string }
+      body?: { [x: string]: JsonValue }
+      models?: {
+        [x: string]: {
+          modelID?: string
+          family?: string
+          name?: string
+          compatibility?: ModelCompatibility
+          package?: string
+          settings?: { [x: string]: JsonValue }
+          headers?: { [x: string]: string }
+          body?: { [x: string]: JsonValue }
+          capabilities?: ModelCapabilities
+          variants?: Array<{
+            id: string
+            settings?: { [x: string]: JsonValue }
+            headers?: { [x: string]: string }
+            body?: { [x: string]: JsonValue }
+          }>
+          cost?:
+            | {
+                tier?: { type: "context"; size: number }
+                input: MoneyUSDPerMillionTokens
+                output: MoneyUSDPerMillionTokens
+                cache?: { read?: MoneyUSDPerMillionTokens; write?: MoneyUSDPerMillionTokens }
+              }
+            | Array<{
+                tier?: { type: "context"; size: number }
+                input: MoneyUSDPerMillionTokens
+                output: MoneyUSDPerMillionTokens
+                cache?: { read?: MoneyUSDPerMillionTokens; write?: MoneyUSDPerMillionTokens }
+              }>
+          disabled?: boolean
+          limit?: { context?: number; input?: number; output?: number }
+        }
+      }
+    }
+  }
+  experimental?: {
+    portable_shell_scanner?: boolean
+    subagent_depth?: number
+    policies?: Array<{ action: "provider.use"; resource: string; effect: "allow" | "deny" }>
+  }
 }
 
 export type ConfigGetInput = {

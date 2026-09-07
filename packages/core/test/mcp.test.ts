@@ -241,6 +241,8 @@ function resourceMcpLayer(
               Config.Service,
               Config.Service.of({
                 entries: overrides.entries,
+                global: () => Effect.succeed(new Info({})),
+                updateGlobal: (patch) => Effect.succeed(patch),
                 changes: () => Stream.never,
               }),
             )

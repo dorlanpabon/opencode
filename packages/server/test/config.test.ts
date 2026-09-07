@@ -59,6 +59,32 @@ it.live("returns ordered config entries for the requested directory", () =>
   }),
 )
 
+it.live("persists global configuration updates", () =>
+  Effect.gen(function* () {
+    const tmp = yield* Effect.acquireDisposable(Effect.promise(() => tmpdir("opencode-config-update-")))
+    const global = path.join(tmp.path, "global")
+    yield* Effect.promise(() => fs.mkdir(global, { recursive: true }))
+    const server = yield* startServer(global)
+    const url = new URL("/api/config/global", server.base)
+    const updated = yield* Effect.promise(() =>
+      fetch(url, {
+        method: "PATCH",
+        headers: { ...server.headers, "content-type": "application/json" },
+        body: JSON.stringify({ customInstructions: "Prefer Bun APIs." }),
+      }),
+    )
+    const read = yield* Effect.promise(() => fetch(url, { headers: server.headers }))
+    const body: unknown = yield* Effect.promise(() => read.json())
+    const config = Schema.decodeUnknownSync(Config.Info)(body)
+    const persisted = JSON.parse(yield* Effect.promise(() => fs.readFile(path.join(global, "opencode.json"), "utf8")))
+
+    expect(updated.status).toBe(200)
+    expect(read.status).toBe(200)
+    expect(config.customInstructions).toBe("Prefer Bun APIs.")
+    expect(persisted.customInstructions).toBe("Prefer Bun APIs.")
+  }),
+)
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
 }

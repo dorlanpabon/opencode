@@ -24,6 +24,7 @@ export const CustomInstructionsSetting: Component<{ controller: CustomInstructio
               aria-label={language.t("settings.customInstructions.title")}
               spellcheck={false}
               onInput={(event) => props.controller.update(event.currentTarget.value)}
+              onBlur={props.controller.flush}
             />
             <span class="text-11-regular text-v2-text-text-muted">
               {language.t("settings.customInstructions.hint")}
