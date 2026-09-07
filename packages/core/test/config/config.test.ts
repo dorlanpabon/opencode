@@ -678,6 +678,10 @@ describe("Config", () => {
     })
   })
 
+  test("migrates v1 custom instructions into v2 configuration", () => {
+    expect(ConfigMigrateV1.migrate({ customInstructions: "Use tabs." }).customInstructions).toBe("Use tabs.")
+  })
+
   test("migrates v1 provider lists to policies", () => {
     expect(
       ConfigMigrateV1.migrate({

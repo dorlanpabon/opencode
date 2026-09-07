@@ -7,6 +7,7 @@ import { AbsolutePath, optional } from "./schema.js"
 import { ConfigAgent } from "./config/agent.js"
 import { ConfigMedia } from "./config/media.js"
 import { ConfigCompaction } from "./config/compaction.js"
+import { ConfigInfinite } from "./config/infinite.js"
 import { ConfigCommand } from "./config/command.js"
 import { ConfigExperimental } from "./config/experimental.js"
 import { ConfigFormatter } from "./config/formatter.js"
@@ -80,6 +81,9 @@ export class Info extends Schema.Class<Info>("Config.Info")({
   compaction: ConfigCompaction.Info.pipe(optional).annotate({
     description: "Conversation compaction behavior",
   }),
+  infinite: ConfigInfinite.Info.pipe(optional).annotate({
+    description: "Infinite agent mode auto-continue limits",
+  }),
   skills: Schema.String.pipe(Schema.Array, optional).annotate({
     description: "Additional paths or URLs to discover skills from",
   }),
@@ -88,6 +92,9 @@ export class Info extends Schema.Class<Info>("Config.Info")({
   }),
   instructions: Schema.String.pipe(Schema.Array, optional).annotate({
     description: "Additional paths or URLs supplying ambient instructions",
+  }),
+  customInstructions: Schema.String.pipe(optional).annotate({
+    description: "Free-form custom instructions included in the system prompt",
   }),
   references: ConfigReference.Info.pipe(optional).annotate({
     description: "Named local directories or Git repositories available as external context",

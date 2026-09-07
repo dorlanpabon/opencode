@@ -333,6 +333,28 @@ Control automatic context compaction and how much recent context it preserves.
 
 See the [compaction guide](/compaction) for automatic context management.
 
+### Infinite
+
+Control infinite agent mode auto-continue limits through the `infinite` option.
+
+```jsonc
+{
+  "infinite": {
+    "maxIterations": 100,
+    "maxHours": 8,
+    "sentinel": "[TASK_COMPLETE]",
+    "todoDetection": true
+  }
+}
+```
+
+- `maxIterations` - Maximum auto-continue iterations before stopping (default: `100`).
+- `maxHours` - Maximum wall-clock hours before stopping (default: `8`).
+- `sentinel` - Completion marker the agent emits when the task is fully complete (default: `"[TASK_COMPLETE]"`).
+- `todoDetection` - Stop when all todos are completed or cancelled (default: `true`).
+
+Use the Mode toggle in the composer footer to switch between `Complete` and `Infinite` per session. The existing Stop button interrupts the loop at any time.
+
 ### Session warming
 
 Keep recently active model sessions warm with periodic transient requests.
@@ -393,6 +415,18 @@ but does not load these entries yet; use `AGENTS.md` for active instructions.
 ```
 
 See the [instructions guide](/instructions) for project instructions and `AGENTS.md`.
+
+### Custom instructions
+
+Store Codex-style personalized instructions in `customInstructions`. Describe your role, the tools on this machine, and how you like to work:
+
+```jsonc
+{
+  "customInstructions": "You are a senior TypeScript engineer. Prefer Bun APIs, explain tradeoffs briefly, and run typecheck before finishing.",
+}
+```
+
+Global and project configs are merged: keep personal defaults in your global config and extend them per project. `customInstructions` applies to every new chat.
 
 ### References
 

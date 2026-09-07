@@ -36,6 +36,7 @@ export type ComposerEditorView = {
   }
   agent?: ComposerSelectControl
   variant?: ComposerSelectControl
+  mode?: ComposerSelectControl
   submit: {
     stopping: Accessor<boolean>
     working?: Accessor<boolean>
@@ -358,6 +359,13 @@ export function createComposerEditor(input: {
     openCommands() {
       dispatch({ type: "commands.open" })
     },
+    selectCommand(item: ComposerSuggestion) {
+      // Open first so a populated draft takes the command-menu branch
+      // (prepend command, keep text as args), matching the command menu.
+      dispatch({ type: "commands.open" })
+      dispatch({ type: "popover.select", item })
+    },
+    commands: input.commands,
     openContext() {
       dispatch({ type: "context.open" })
     },

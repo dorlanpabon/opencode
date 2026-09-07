@@ -51,7 +51,7 @@ const channel = (() => {
 })()
 
 const APP_IDS = {
-  dev: "ai.opencode.desktop.dev",
+  dev: "ai.opencode.desktop.dev.dorlanpabon.v2",
   beta: "ai.opencode.desktop.beta",
   prod: "ai.opencode.desktop",
 } as const
@@ -161,7 +161,7 @@ function getConfig() {
       return {
         ...base,
         appId,
-        productName: "OpenCode Dev",
+        productName: "OpenCode V2 Dorlanpabon",
         deb: { fpm: [metainfoFpm(appId)] },
         rpm: { packageName: "opencode-dev", fpm: [metainfoFpm(appId)] },
       }
