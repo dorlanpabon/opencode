@@ -251,7 +251,7 @@ export const defaultSettings: Settings = {
     mobileTitlebarPosition: "top",
     mobileDiffWrap: true,
     terminalPlacement: "side",
-    followUpBehavior: "steer",
+    followUpBehavior: "queue",
     // Fork difference vs upstream opt-in: enabled by default for Codex-like internal browser parity.
     // Disable via settings or {"plugins":["-opencode.browser"]}.
     experimentalBrowser: true,
