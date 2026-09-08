@@ -2,7 +2,7 @@ export * as Plugin from "./plugin.js"
 
 import { Schema } from "effect"
 import { ephemeral, inventory } from "./event.js"
-import { optional } from "./schema.js"
+import { NonNegativeInt, optional } from "./schema.js"
 
 export const ID = Schema.String.pipe(Schema.brand("Plugin.ID"))
 export type ID = typeof ID.Type
@@ -41,6 +41,33 @@ export const Info = Schema.Struct({
   features: Features,
   state: State,
 }).annotate({ identifier: "Plugin.Info" })
+
+export interface CodexFeatures extends Schema.Schema.Type<typeof CodexFeatures> {}
+export const CodexFeatures = Schema.Struct({
+  skills: NonNegativeInt,
+  mcp: NonNegativeInt,
+  apps: Schema.Boolean,
+  hooks: Schema.Boolean,
+}).annotate({ identifier: "Plugin.CodexFeatures" })
+
+export interface CodexCompatible extends Schema.Schema.Type<typeof CodexCompatible> {}
+export const CodexCompatible = Schema.Struct({
+  skills: NonNegativeInt,
+  mcp: NonNegativeInt,
+}).annotate({ identifier: "Plugin.CodexCompatible" })
+
+export interface CodexInfo extends Schema.Schema.Type<typeof CodexInfo> {}
+export const CodexInfo = Schema.Struct({
+  id: Schema.String,
+  name: Schema.String,
+  displayName: Schema.String,
+  description: Schema.String.pipe(optional),
+  version: Schema.String,
+  source: Schema.String,
+  features: CodexFeatures,
+  compatible: CodexCompatible,
+  installed: Schema.Boolean,
+}).annotate({ identifier: "Plugin.CodexInfo" })
 
 const Updated = ephemeral({
   type: "plugin.updated",

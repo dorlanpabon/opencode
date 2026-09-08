@@ -13,6 +13,9 @@ import type {
   AgentListOutput,
   AgentGetInput,
   AgentGetOutput,
+  PluginCodexListOutput,
+  PluginCodexInstallInput,
+  PluginCodexInstallOutput,
   PluginListInput,
   PluginListOutput,
   PluginAwaitActivationInput,
@@ -326,6 +329,14 @@ const adaptGroupAgent = (raw: RawClient["server.agent"]) => ({
   get: EndpointAgentGet(raw),
 })
 
+const EndpointPluginCodexList = (raw: RawClient["server.plugin"]) => () =>
+  preserveEffect<PluginCodexListOutput>()(raw["plugin.codex.list"]({}).pipe(Effect.mapError(mapClientError)))
+
+const EndpointPluginCodexInstall = (raw: RawClient["server.plugin"]) => (input: PluginCodexInstallInput) =>
+  preserveEffect<PluginCodexInstallOutput>()(
+    raw["plugin.codex.install"]({ payload: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+  )
+
 const EndpointPluginList = (raw: RawClient["server.plugin"]) => (input?: PluginListInput) =>
   preserveEffect<PluginListOutput>()(
     raw["plugin.list"]({ query: { location: input?.["location"] } }).pipe(Effect.mapError(mapClientError)),
@@ -351,6 +362,7 @@ const EndpointPluginUpdate = (raw: RawClient["server.plugin"]) => (input: Plugin
   )
 
 const adaptGroupPlugin = (raw: RawClient["server.plugin"]) => ({
+  codex: { list: EndpointPluginCodexList(raw), install: EndpointPluginCodexInstall(raw) },
   list: EndpointPluginList(raw),
   awaitActivation: EndpointPluginAwaitActivation(raw),
   check: EndpointPluginCheck(raw),

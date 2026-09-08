@@ -82,6 +82,15 @@ export interface AgentApi<E = never> {
   readonly get: AgentGetOperation<E>
 }
 
+export type PluginCodexListOutput = ReadonlyArray<Plugin.CodexInfo>
+export type PluginCodexListOperation<E = never> = () => Effect.Effect<PluginCodexListOutput, E>
+
+export type PluginCodexInstallInput = { readonly id: string }
+export type PluginCodexInstallOutput = Plugin.CodexInfo
+export type PluginCodexInstallOperation<E = never> = (
+  input: PluginCodexInstallInput,
+) => Effect.Effect<PluginCodexInstallOutput, E>
+
 export type PluginListInput = {
   readonly location?: { readonly directory?: string | undefined; readonly workspace?: string | undefined } | undefined
 }
@@ -111,6 +120,7 @@ export type PluginUpdateOutput = void
 export type PluginUpdateOperation<E = never> = (input: PluginUpdateInput) => Effect.Effect<PluginUpdateOutput, E>
 
 export interface PluginApi<E = never> {
+  readonly codex: { readonly list: PluginCodexListOperation<E>; readonly install: PluginCodexInstallOperation<E> }
   readonly list: PluginListOperation<E>
   readonly awaitActivation: PluginAwaitActivationOperation<E>
   readonly check: PluginCheckOperation<E>

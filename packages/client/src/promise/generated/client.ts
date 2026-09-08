@@ -7,6 +7,9 @@ import type {
   AgentListOutput,
   AgentGetInput,
   AgentGetOutput,
+  PluginCodexListOutput,
+  PluginCodexInstallInput,
+  PluginCodexInstallOutput,
   PluginListInput,
   PluginListOutput,
   PluginAwaitActivationInput,
@@ -463,6 +466,31 @@ export function make(options: ClientOptions) {
         ),
     },
     plugin: {
+      codex: {
+        list: (requestOptions?: RequestOptions) =>
+          request<PluginCodexListOutput>(
+            {
+              method: "GET",
+              path: `/api/plugin/codex`,
+              successStatus: 200,
+              declaredStatuses: [400, 401],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        install: (input: PluginCodexInstallInput, requestOptions?: RequestOptions) =>
+          request<PluginCodexInstallOutput>(
+            {
+              method: "POST",
+              path: `/api/plugin/codex/install`,
+              body: { id: input["id"] },
+              successStatus: 200,
+              declaredStatuses: [400, 401, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+      },
       list: (input?: PluginListInput, requestOptions?: RequestOptions) =>
         request<PluginListOutput>(
           {

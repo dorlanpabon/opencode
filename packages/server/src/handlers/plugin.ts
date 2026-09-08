@@ -1,4 +1,5 @@
 import { Plugin } from "@opencode-ai/core/plugin"
+import * as CodexPlugin from "@opencode-ai/core/plugin/codex"
 import { PluginUpdate } from "@opencode-ai/core/plugin/update"
 import { InvalidRequestError, ServiceUnavailableError } from "@opencode-ai/protocol/errors"
 import { Cause, Effect, Exit } from "effect"
@@ -8,6 +9,16 @@ import { response } from "../location"
 
 export const PluginHandler = HttpApiBuilder.group(Api, "server.plugin", (handlers) =>
   handlers
+    .handle("plugin.codex.list", () => CodexPlugin.list())
+    .handle("plugin.codex.install", (ctx) =>
+      CodexPlugin.install(ctx.payload.id).pipe(
+        Effect.mapError((error) =>
+          error instanceof CodexPlugin.InvalidError
+            ? new InvalidRequestError({ message: error.message, field: "id" })
+            : new ServiceUnavailableError({ message: String(error), service: "codex-plugin" }),
+        ),
+      ),
+    )
     .handle("plugin.list", () =>
       Effect.gen(function* () {
         return yield* response(Plugin.Service.use((plugin) => plugin.list()))

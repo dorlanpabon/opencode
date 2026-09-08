@@ -7,6 +7,32 @@ import { LocationQuery, locationQueryOpenApi } from "./location.js"
 
 export const PluginGroup = HttpApiGroup.make("server.plugin")
   .add(
+    HttpApiEndpoint.get("plugin.codex.list", "/api/plugin/codex", {
+      success: Schema.Array(Plugin.CodexInfo),
+    }).annotateMerge(
+      OpenApi.annotations({
+        identifier: "v2.plugin.codex.list",
+        summary: "List Codex plugins",
+        description:
+          "List the newest plugins in the local Codex cache and report which skills and standard MCP servers OpenCode can import.",
+      }),
+    ),
+  )
+  .add(
+    HttpApiEndpoint.post("plugin.codex.install", "/api/plugin/codex/install", {
+      payload: Schema.Struct({ id: Schema.String }),
+      success: Plugin.CodexInfo,
+      error: [InvalidRequestError, ServiceUnavailableError],
+    }).annotateMerge(
+      OpenApi.annotations({
+        identifier: "v2.plugin.codex.install",
+        summary: "Install a Codex plugin",
+        description:
+          "Import compatible skills and MCP definitions from one locally cached Codex plugin into global OpenCode configuration.",
+      }),
+    ),
+  )
+  .add(
     HttpApiEndpoint.get("plugin.list", "/api/plugin", {
       query: LocationQuery,
       success: Location.response(Schema.Array(Plugin.Info)),

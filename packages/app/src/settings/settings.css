@@ -1307,7 +1307,7 @@
 }
 
 .settings-extensions-tabs[data-component="tabs-v2"][data-variant="pill"] > [data-slot="tabs-v2-list"] {
-  width: min(280px, 100%);
+  width: min(360px, 100%);
   padding-inline: 0 !important;
 }
 

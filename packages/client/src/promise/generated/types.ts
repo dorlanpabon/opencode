@@ -10,6 +10,10 @@ export type AgentColor = string
 
 export type PermissionEffect = "allow" | "deny" | "ask"
 
+export type PluginCodexFeatures = { skills: number; mcp: number; apps: boolean; hooks: boolean }
+
+export type PluginCodexCompatible = { skills: number; mcp: number }
+
 export type PluginSource =
   | { type: "builtin" }
   | { type: "package"; target: string; version?: string; outdated?: true; updating?: true }
@@ -437,6 +441,18 @@ export type ProviderRequest = {
 }
 
 export type PermissionRule = { action: string; resource: string; effect: PermissionEffect }
+
+export type PluginCodexInfo = {
+  id: string
+  name: string
+  displayName: string
+  description?: string
+  version: string
+  source: string
+  features: PluginCodexFeatures
+  compatible: PluginCodexCompatible
+  installed: boolean
+}
 
 export type PluginInfo = { id?: string; source: PluginSource; features: PluginFeatures; state: PluginState }
 
@@ -2582,6 +2598,12 @@ export type AgentGetOutput = {
   location: { directory: string; workspaceID?: string; project: { id: string; directory: string; canonical: string } }
   data: AgentInfo
 }
+
+export type PluginCodexListOutput = Array<PluginCodexInfo>
+
+export type PluginCodexInstallInput = { readonly id: { readonly id: string }["id"] }
+
+export type PluginCodexInstallOutput = PluginCodexInfo
 
 export type PluginListInput = {
   readonly location?: {
