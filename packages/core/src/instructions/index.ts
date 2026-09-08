@@ -32,6 +32,7 @@ export type Removed = typeof removed
  */
 export interface Source {
   readonly key: Key
+  readonly lifetime?: "session"
   readonly read: Effect.Effect<Schema.Json | Unavailable | Removed>
   readonly initial: (value: Schema.Json) => string | undefined
   readonly changed: (previous: Schema.Json, current: Schema.Json) => string | undefined
@@ -42,12 +43,13 @@ export declare namespace Source {
   /** The typed definition supplied when constructing a source. */
   export interface Definition<A> {
     readonly key: Key
+    readonly lifetime?: "session"
     readonly codec: Schema.Codec<A, Schema.Json>
     readonly read: Effect.Effect<A | Unavailable | Removed>
     readonly render: {
-      readonly initial: (current: A) => string
-      readonly changed: (previous: A, current: A) => string
-      readonly removed?: (previous: A) => string
+      readonly initial: (current: A) => string | undefined
+      readonly changed: (previous: A, current: A) => string | undefined
+      readonly removed?: (previous: A) => string | undefined
     }
   }
 }
@@ -57,6 +59,7 @@ export type List = ReadonlyArray<Source>
 
 export type ReadResult = ReadonlyArray<{
   readonly key: Key
+  readonly lifetime?: "session"
   readonly value: Schema.Json | Unavailable | Removed
 }>
 
@@ -93,6 +96,7 @@ export function make<A>(source: Source.Definition<A>): List {
   return [
     {
       key: source.key,
+      lifetime: source.lifetime,
       read: source.read.pipe(
         Effect.map((value) => {
           if (isUnavailable(value)) return unavailable
@@ -134,7 +138,10 @@ export function combine(values: ReadonlyArray<List>): List {
 export function read(value: List): Effect.Effect<ReadResult> {
   return Effect.forEach(
     value,
-    (source) => source.read.pipe(Effect.map((observed) => ({ key: source.key, value: observed }))),
+    (source) =>
+      source.read.pipe(
+        Effect.map((observed) => ({ key: source.key, lifetime: source.lifetime, value: observed })),
+      ),
     { concurrency: "unbounded" },
   )
 }
@@ -145,6 +152,7 @@ export function diff(observed: ReadResult, previous?: Values): Effect.Effect<Adm
   const delta: Record<string, Hash | Instruction.Removed> = {}
   const blobs: Record<string, Schema.Json> = {}
   for (const entry of observed) {
+    if (previous && entry.lifetime === "session" && Object.hasOwn(previous, entry.key)) continue
     if (isUnavailable(entry.value)) continue
     if (isRemoved(entry.value)) {
       if (previous && Object.hasOwn(previous, entry.key)) delta[entry.key] = Instruction.removed
@@ -250,7 +258,8 @@ function canonical(value: Schema.Json): string {
   return JSON.stringify(value)
 }
 
-function requireText(key: Key, kind: string, text: string) {
+function requireText(key: Key, kind: string, text: string | undefined) {
+  if (text === undefined) return
   if (text.length === 0) throw new Error(`Instruction source ${key} rendered an empty ${kind}`)
   return text
 }

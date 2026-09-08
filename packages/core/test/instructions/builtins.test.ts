@@ -19,6 +19,7 @@ const directory = AbsolutePath.make(FSUtil.resolve("/repo/packages/core"))
 const projectDirectory = AbsolutePath.make(FSUtil.resolve("/repo"))
 const timestamp = Date.parse("2026-06-03T12:00:00.000Z")
 const sessionID = SessionSchema.ID.make("ses_builtin_test")
+const nextSessionID = SessionSchema.ID.make("ses_builtin_next_test")
 const temporary = os.tmpdir()
 const localDate = (time: number) => new Date(time).toDateString()
 const locationLayer = Layer.succeed(
@@ -33,12 +34,17 @@ const locationLayer = Layer.succeed(
 const osName = (platform: string) =>
   platform === "win32" ? "Windows" : platform === "darwin" ? "macOS" : platform === "linux" ? "Linux" : platform
 const expectedOS = `  OS: ${osName(process.platform)} (${process.arch})`
-const baseLayer = (entries: Parameters<typeof Config.testLayer>[0] = []) =>
-  AppNodeBuilder.build(InstructionBuiltIns.node, [
-    Location.node.replace(locationLayer),
-    Global.node.replace(Global.layerWith({ config: temporary, tmp: temporary })),
-    Config.node.replace(Config.testLayer(entries)),
-  ])
+const baseLayer = (entries: Parameters<typeof Config.testLayer>[0] = []) => {
+  const config = Config.testLayer(entries)
+  return Layer.merge(
+    AppNodeBuilder.build(InstructionBuiltIns.node, [
+      Location.node.replace(locationLayer),
+      Global.node.replace(Global.layerWith({ config: temporary, tmp: temporary })),
+      Config.node.replace(config),
+    ]),
+    config,
+  )
+}
 const it = testEffect(baseLayer())
 
 describe("InstructionBuiltIns", () => {
@@ -131,6 +137,7 @@ describe("InstructionBuiltIns custom instructions", () => {
       const context = yield* InstructionBuiltIns.Service
       const initialized = yield* readInitial(yield* context.load(sessionID))
       expect(initialized.text).not.toContain("<custom_instructions>")
+      expect(initialized.values["core/custom-instructions"]).toBe("")
     }),
   )
 
@@ -140,6 +147,26 @@ describe("InstructionBuiltIns custom instructions", () => {
       const context = yield* InstructionBuiltIns.Service
       const initialized = yield* readInitial(yield* context.load(sessionID))
       expect(initialized.text).not.toContain("<custom_instructions>")
+    }),
+  )
+
+  customIt([
+    new Document({ type: "document", info: new Info({ customInstructions: "initial rules" }) }),
+  ]).effect("keeps each session's initial custom instructions while new sessions use the latest value", () =>
+    Effect.gen(function* () {
+      const context = yield* InstructionBuiltIns.Service
+      const config = yield* Config.Test
+      const initial = yield* readInitial(yield* context.load(sessionID))
+
+      yield* config.setEntries([
+        new Document({ type: "document", info: new Info({ customInstructions: "updated rules" }) }),
+      ])
+      const existing = yield* readUpdate(yield* context.load(sessionID), initial)
+      const created = yield* readInitial(yield* context.load(nextSessionID))
+
+      expect(existing.changed).toBe(false)
+      expect(existing.values).toEqual(initial.values)
+      expect(created.text).toContain("<custom_instructions>\nupdated rules\n</custom_instructions>")
     }),
   )
 })

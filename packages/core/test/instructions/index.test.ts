@@ -62,6 +62,25 @@ describe("Instructions", () => {
     }),
   )
 
+  it.effect("keeps session-lifetime sources fixed after their initial value", () =>
+    Effect.gen(function* () {
+      const instructions = Instructions.make({
+        key: key("core/custom-instructions"),
+        lifetime: "session",
+        codec: Schema.toCodecJson(Schema.String),
+        read: Effect.succeed("updated"),
+        render: { initial: String, changed: (_previous, current) => current },
+      })
+      const admitted = yield* Instructions.read(instructions).pipe(
+        Effect.flatMap((observed) =>
+          Instructions.diff(observed, { "core/custom-instructions": Instructions.hash("initial") }),
+        ),
+      )
+
+      expect(admitted).toEqual({ delta: {}, blobs: {} })
+    }),
+  )
+
   it.effect("renders a changed value from stored values", () =>
     Effect.gen(function* () {
       const instructions = source({

@@ -64,6 +64,7 @@ const layer = Layer.effect(
             }),
             Instructions.make({
               key: customKey,
+              lifetime: "session",
               codec: Schema.toCodecJson(Schema.String),
               read: Effect.gen(function* () {
                 const entries = yield* config.entries().pipe(Effect.orElseSucceed(() => []))
@@ -71,13 +72,11 @@ const layer = Layer.effect(
                   const text = entry.type === "document" ? entry.info.customInstructions?.trim() : undefined
                   return text ? [text] : []
                 })
-                if (parts.length === 0) return Instructions.removed
                 return parts.join("\n\n")
               }),
               render: {
-                initial: renderCustom,
+                initial: (text) => (text ? renderCustom(text) : undefined),
                 changed: (_previous, current) => renderCustom(current),
-                removed: () => "Previously loaded custom instructions no longer apply.",
               },
             }),
           ]),
