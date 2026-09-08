@@ -95,6 +95,32 @@ test("custom instructions stay visible after saving and reopening settings", asy
   expect(layout.copyBottom).toBeLessThanOrEqual(layout.fieldTop)
 })
 
+test("default session mode saves to global config and stays selected", async ({ page }) => {
+  let mode: "complete" | "infinite" = "complete"
+  await page.route("**/api/config/global", async (route) => {
+    if (route.request().method() === "PATCH") {
+      const body = route.request().postDataJSON() as { default_session_mode?: "complete" | "infinite" }
+      mode = body.default_session_mode ?? mode
+    }
+    await route.fulfill({ json: { default_session_mode: mode } })
+  })
+  await page.reload()
+
+  const settings = page.getByTestId("settings-screen")
+  const control = settings.locator('[data-action="settings-default-session-mode"]')
+  await expect(control).toContainText("Complete")
+  await control.click()
+  await page.getByRole("option", { name: "Infinite", exact: true }).click()
+  await expect.poll(() => mode).toBe("infinite")
+  await expect(control).toContainText("Infinite")
+
+  await page.reload()
+  await expect(control).toContainText("Infinite")
+
+  await page.keyboard.press("Control+t")
+  await expect(page.getByRole("button", { name: "Choose mode", exact: true })).toContainText("Infinite")
+})
+
 test("new session shortcut leaves settings and opens a new session screen", async ({ page }) => {
   const settings = page.getByTestId("settings-screen")
   await expect(settings).toBeFocused()

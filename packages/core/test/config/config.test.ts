@@ -678,6 +678,14 @@ describe("Config", () => {
     })
   })
 
+  test("normalizes the default session mode", () => {
+    expect(ConfigNormalize.normalize({ default_session_mode: "infinite" })).toEqual({
+      type: "normalized",
+      encoded: { default_session_mode: "infinite" },
+      diagnostics: [],
+    })
+  })
+
   test("migrates v1 custom instructions into v2 configuration", () => {
     expect(ConfigMigrateV1.migrate({ customInstructions: "Use tabs." }).customInstructions).toBe("Use tabs.")
   })

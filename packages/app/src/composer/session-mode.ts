@@ -1,7 +1,10 @@
 export type SessionMode = "complete" | "infinite"
 
-export function resolveSessionMode(value: string | null | undefined): SessionMode {
-  if (value === "infinite") return "infinite"
+export function resolveSessionMode(
+  value: string | null | undefined,
+  fallback?: string | null | undefined,
+): SessionMode {
+  if ((value ?? fallback) === "infinite") return "infinite"
   return "complete"
 }
 

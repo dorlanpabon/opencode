@@ -35,6 +35,9 @@ export class Info extends Schema.Class<Info>("Config.Info")({
   default_agent: Schema.String.pipe(optional).annotate({
     description: "Default primary agent to use when no session agent is selected",
   }),
+  default_session_mode: Schema.Literals(["complete", "infinite"]).pipe(optional).annotate({
+    description: "Default session completion mode when no per-session mode is selected",
+  }),
   update: Schema.Literals(["disable", "notify"]).pipe(optional).annotate({
     description: "Disable updates or notify when one is available",
   }),

@@ -13,6 +13,12 @@ describe("session mode", () => {
     expect(resolveSessionMode("other")).toBe("complete")
   })
 
+  test("uses the configured fallback when no session override exists", () => {
+    expect(resolveSessionMode(undefined, "infinite")).toBe("infinite")
+    expect(resolveSessionMode(null, "complete")).toBe("complete")
+    expect(resolveSessionMode("complete", "infinite")).toBe("complete")
+  })
+
   test("cycles between complete and infinite", () => {
     expect(cycleSessionMode("complete")).toBe("infinite")
     expect(cycleSessionMode("infinite")).toBe("complete")

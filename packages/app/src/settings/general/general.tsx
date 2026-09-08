@@ -21,11 +21,14 @@ import { SettingsRow } from "@/settings/row"
 import {
   createAppearanceSettingsController,
   createCustomInstructionsSettingsController,
+  createDefaultSessionModeSettingsController,
   createShellOptions,
   createShellSettingsController,
   type AppearanceSettingsController,
+  type DefaultSessionModeSettingsController,
   type ShellSettingsController,
 } from "./controllers"
+import type { SessionMode } from "@/composer/session-mode"
 import { CustomInstructionsSetting } from "./custom-instructions"
 import "@/settings/settings.css"
 import { ServerConnection } from "@/runtime/server/registry"
@@ -186,6 +189,36 @@ const FollowUpBehaviorSetting: Component = () => {
   )
 }
 
+const DefaultSessionModeSetting: Component<{ controller: DefaultSessionModeSettingsController }> = (props) => {
+  const language = useLanguage()
+  const options = createMemo((): { value: SessionMode; label: string }[] => [
+    { value: "complete", label: language.t("session.mode.complete") },
+    { value: "infinite", label: language.t("session.mode.infinite") },
+  ])
+
+  return (
+    <SettingsRow
+      title={language.t("settings.general.row.defaultSessionMode.title")}
+      description={language.t("settings.general.row.defaultSessionMode.description")}
+    >
+      <Select
+        data-action="settings-default-session-mode"
+        aria-label={language.t("settings.general.row.defaultSessionMode.title")}
+        options={options()}
+        current={options().find((option) => option.value === props.controller.current())}
+        value={(option) => option.value}
+        label={(option) => option.label}
+        placement="bottom-end"
+        gutter={6}
+        onSelect={(option) => {
+          if (!option) return
+          void props.controller.select(option.value)
+        }}
+      />
+    </SettingsRow>
+  )
+}
+
 const AppearanceSection: Component<{ controller: AppearanceSettingsController }> = (props) => {
   const language = useLanguage()
   return (
@@ -307,6 +340,7 @@ export const SettingsGeneral: Component<{
   const updater = useUpdaterAction()
   const shell = createShellSettingsController(() => props.server)
   const customInstructions = createCustomInstructionsSettingsController(() => props.server)
+  const defaultSessionMode = createDefaultSessionModeSettingsController(() => props.server)
   const desktop = createMemo(() => platform.platform === "desktop")
 
   const [pinchZoom, { mutate: setPinchZoom }] = createResource(
@@ -334,6 +368,7 @@ export const SettingsGeneral: Component<{
         <ShellSetting controller={shell} />
         <TerminalPlacementSetting />
         <FollowUpBehaviorSetting />
+        <DefaultSessionModeSetting controller={defaultSessionMode} />
 
         <SettingsRow
           title={language.t("session.review.wrapLines")}

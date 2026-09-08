@@ -1092,6 +1092,9 @@ export const dict = {
 
   "settings.general.row.releaseNotes.title": "Release notes",
   "settings.general.row.releaseNotes.description": "Show What's New popups after updates",
+  "settings.general.row.defaultSessionMode.title": "Default session mode",
+  "settings.general.row.defaultSessionMode.description":
+    "Choose whether chats start in Complete or Infinite mode. You can override it from the composer.",
 
   "settings.updates.row.startup.title": "Check for updates on startup",
   "settings.updates.row.startup.description": "Automatically check for updates when OpenCode launches",

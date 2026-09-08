@@ -147,6 +147,7 @@ export type Config = {
   model?: string | { providerID: string; model: string; variant?: string }
   small_model?: string
   default_agent?: string
+  default_session_mode?: "complete" | "infinite"
   username?: string
   share?: "manual" | "auto" | "disabled"
   autoshare?: boolean

@@ -1892,6 +1892,7 @@ export type ConfigEntry =
         shell?: string
         model?: string | { providerID: string; model: string; variant?: string }
         default_agent?: string
+        default_session_mode?: "complete" | "infinite"
         update?: "disable" | "notify"
         share?: "manual" | "auto" | "disabled"
         enterprise?: { url?: string }
@@ -6330,6 +6331,7 @@ export type ConfigGlobalOutput = {
   shell?: string
   model?: string | { providerID: string; model: string; variant?: string }
   default_agent?: string
+  default_session_mode?: "complete" | "infinite"
   update?: "disable" | "notify"
   share?: "manual" | "auto" | "disabled"
   enterprise?: { url?: string }
@@ -6496,6 +6498,7 @@ export type ConfigUpdateInput = {
     readonly shell?: string
     readonly model?: string | { readonly providerID: string; readonly model: string; readonly variant?: string }
     readonly default_agent?: string
+    readonly default_session_mode?: "complete" | "infinite"
     readonly update?: "disable" | "notify"
     readonly share?: "manual" | "auto" | "disabled"
     readonly enterprise?: { readonly url?: string }
@@ -6706,6 +6709,7 @@ export type ConfigUpdateOutput = {
   shell?: string
   model?: string | { providerID: string; model: string; variant?: string }
   default_agent?: string
+  default_session_mode?: "complete" | "infinite"
   update?: "disable" | "notify"
   share?: "manual" | "auto" | "disabled"
   enterprise?: { url?: string }

@@ -26,6 +26,14 @@ describe("Config.Entry", () => {
     expect(decode({ websearch: { provider: "random" } }).websearch).toEqual({ provider: "random" })
   })
 
+  test("accepts complete and infinite as the default session mode", () => {
+    const decode = Schema.decodeUnknownSync(Config.Info)
+
+    expect(decode({ default_session_mode: "complete" }).default_session_mode).toBe("complete")
+    expect(decode({ default_session_mode: "infinite" }).default_session_mode).toBe("infinite")
+    expect(() => decode({ default_session_mode: "other" })).toThrow()
+  })
+
   test("round-trips every configuration entry type", () => {
     const entries = [
       new Config.Document({

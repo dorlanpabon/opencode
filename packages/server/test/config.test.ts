@@ -70,7 +70,7 @@ it.live("persists global configuration updates", () =>
       fetch(url, {
         method: "PATCH",
         headers: { ...server.headers, "content-type": "application/json" },
-        body: JSON.stringify({ customInstructions: "Prefer Bun APIs." }),
+        body: JSON.stringify({ customInstructions: "Prefer Bun APIs.", default_session_mode: "infinite" }),
       }),
     )
     const read = yield* Effect.promise(() => fetch(url, { headers: server.headers }))
@@ -81,7 +81,9 @@ it.live("persists global configuration updates", () =>
     expect(updated.status).toBe(200)
     expect(read.status).toBe(200)
     expect(config.customInstructions).toBe("Prefer Bun APIs.")
+    expect(config.default_session_mode).toBe("infinite")
     expect(persisted.customInstructions).toBe("Prefer Bun APIs.")
+    expect(persisted.default_session_mode).toBe("infinite")
   }),
 )
 

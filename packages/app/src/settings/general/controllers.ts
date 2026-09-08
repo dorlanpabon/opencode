@@ -17,6 +17,7 @@ import { playSoundById, SOUND_OPTIONS } from "@/shell/notifications/sound"
 import { createCustomInstructionsDraftController, createSoundPreviewController, type ShellOption } from "./behavior"
 import { ServerConnection } from "@/runtime/server/registry"
 import { useServerCtx } from "@/runtime/server/runtime"
+import { resolveSessionMode, type SessionMode } from "@/composer/session-mode"
 
 export { createShellOptions, createSoundPreviewController } from "./behavior"
 export type { ShellOption, ShellSelectOption } from "./behavior"
@@ -54,6 +55,18 @@ export function createCustomInstructionsSettingsController(server: Accessor<Serv
     saved,
     persist: (value) => serverCtx()?.sync.updateConfig({ customInstructions: value }),
   })
+}
+
+export function createDefaultSessionModeSettingsController(server: Accessor<ServerConnection.Any | undefined>) {
+  const serverCtx = useServerCtx(server)
+  const current = createMemo(() => resolveSessionMode(serverCtx()?.sync.data.config.default_session_mode))
+  return {
+    current,
+    select(value: SessionMode) {
+      if (value === current()) return
+      return serverCtx()?.sync.updateConfig({ default_session_mode: value })
+    },
+  }
 }
 
 export function createAppearanceSettingsController() {
@@ -153,5 +166,6 @@ export function createSoundSettingsController() {
 
 export type ShellSettingsController = ReturnType<typeof createShellSettingsController>
 export type CustomInstructionsSettingsController = ReturnType<typeof createCustomInstructionsSettingsController>
+export type DefaultSessionModeSettingsController = ReturnType<typeof createDefaultSessionModeSettingsController>
 export type AppearanceSettingsController = ReturnType<typeof createAppearanceSettingsController>
 export type SoundSettingsController = ReturnType<typeof createSoundSettingsController>
