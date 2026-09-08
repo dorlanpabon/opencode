@@ -8,6 +8,7 @@ import { Browser } from "@opencode-ai/plugin-browser/rpc"
 import { OpenCode } from "@opencode-ai/client"
 import { Effect, Fiber, Schema, Stream } from "effect"
 import { createBrowserPane } from "../../src/main/browser-pane"
+import { executeComputerAction } from "../../src/main/computer-use"
 import { bindIpcEvents, ipcEventStream } from "../../src/main/ipc-events"
 import { Smoke } from "./contract"
 import { verifyTargets } from "./targets"
@@ -29,6 +30,15 @@ async function main() {
   app.setPath("userData", path.join(root, "electron-data"))
   app.on("window-all-closed", () => {})
   await app.whenReady()
+  const computerSignal = new AbortController().signal
+  const cursor = await executeComputerAction({ type: "computer.cursor_position" }, computerSignal)
+  const point = Schema.decodeUnknownSync(Schema.Struct({ x: Schema.Number, y: Schema.Number }))(cursor.value)
+  const capture = await executeComputerAction({ type: "computer.screenshot", maxWidth: 640 }, computerSignal)
+  assert.equal(capture.files.length, 1)
+  assert.equal(capture.files[0]?.mime, "image/png")
+  assert(capture.files[0]?.data.byteLength)
+  if (process.platform === "win32")
+    await executeComputerAction({ type: "computer.move", x: point.x, y: point.y }, computerSignal)
   const web = createServer((request, response) => {
     if (request.url === "/cors-allowed" || request.url === "/cors-denied") {
       if (request.url === "/cors-allowed") response.setHeader("access-control-allow-origin", "*")
@@ -136,6 +146,23 @@ async function main() {
     visited.add(name)
     return Schema.decodeUnknownSync(operation.output)(JSON.parse(result.output)) as Output<Name>
   }
+  async function computerCall<Name extends Browser.ComputerOperation["name"]>(
+    name: Name,
+    input: Omit<Extract<Browser.Action, { type: Name }>, "type">,
+  ): Promise<Output<Name>> {
+    console.log(`COMPUTER ${name}`)
+    const result = await rpc.execute(
+      {
+        sessionID: session.id,
+        code: `return await tools.computer.${name.slice("computer.".length)}(${JSON.stringify(input)})`,
+      },
+      { location },
+    )
+    assert(!result.error, result.output)
+    const operation = Browser.ComputerOperations.find((operation) => operation.name === name)
+    assert(operation)
+    return Schema.decodeUnknownSync(operation.output)(JSON.parse(result.output)) as Output<Name>
+  }
   async function fails(name: Browser.Method, input: object, expected: RegExp) {
     const result = await rpc.execute(
       { sessionID: session.id, code: `return await tools.browser.${name}(${JSON.stringify(input)})` },
@@ -150,6 +177,11 @@ async function main() {
       sessionID: session.id,
       endpoint: { url: process.env.SMOKE_URL!, password: process.env.SMOKE_PASSWORD },
     })
+    const displays = await computerCall("computer.displays", {})
+    assert(displays.displays.length)
+    await computerCall("computer.cursor_position", {})
+    const desktop = await computerCall("computer.screenshot", { maxWidth: 640 })
+    assert.equal(desktop.files.length, 1)
     const first = await call("tabs.open", { url: fixture })
     const second = await call("tabs.open", { url: `${fixture}/other`, focus: false })
     assert.equal((await call("tabs.list", {})).tabs.length, 2)

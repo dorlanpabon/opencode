@@ -27,8 +27,22 @@ Screenshots require a focused, visible tab; call `browser.tabs.focus` first.
 - Memory: `heap.snapshot`, `heap.summary`, `heap.query`, `heap.object`, `heap.compare`.
 - Audits: `lighthouse` (accessibility, SEO, best practices).
 
+## Computer use (Windows beta)
+
+The same authenticated desktop attachment exposes `tools.computer` for host
+display screenshots, cursor position/movement, click/double-click, drag,
+Unicode typing, named keys, and scrolling. Read-only observation is available
+without a prompt. The first input action asks for one session-wide grant and
+the server enforces a 50-action limit for that session.
+
+Computer input targets the foreground Windows application. Windows UIPI can
+block input into an elevated application; OpenCode does not elevate itself or
+bypass that boundary. Keep the desktop unlocked and call `computer.screenshot`
+again after actions instead of assuming they succeeded visually.
+
 The source of truth for inputs, descriptions, and outputs is
-`Browser.Operations` in `@opencode-ai/plugin-browser/rpc`.
+`Browser.Operations` and `Browser.ComputerOperations` in
+`@opencode-ai/plugin-browser/rpc`.
 
 The plugin entrypoint only composes its two owners: `connection.ts` manages
 desktop attachments and pending RPC requests; `tools.ts` runs the tool workflow.
@@ -45,7 +59,7 @@ Native browser coverage lives in `packages/desktop/test/browser-native.test.ts`.
 The plugin-owned contract is `@opencode-ai/plugin-browser/rpc`. This entrypoint
 contains only schemas and descriptions; it does not load the server plugin or
 filesystem code. The desktop subscribes
-to control events before starting `attach` with `version: 4`. The attachment call
+to control events before starting `attach` with `version: 5`. The attachment call
 stays pending for its lifetime. A matching `attached` event is the readiness barrier.
 
 - `state` publishes the authoritative tab inventory.

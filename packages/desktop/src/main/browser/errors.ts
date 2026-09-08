@@ -1,4 +1,4 @@
-import type { Browser } from "@opencode-ai/plugin-browser/rpc"
+import { Browser } from "@opencode-ai/plugin-browser/rpc"
 
 export function protocolError(method: string, error: unknown) {
   const detail = message(error)
@@ -17,6 +17,12 @@ export function protocolError(method: string, error: unknown) {
 
 export function browserFailure(action: Browser.Action, error: unknown): Extract<Browser.Outcome, { type: "failure" }> {
   const detail = message(error, 1_700)
+  if (Browser.isComputerAction(action))
+    return {
+      type: "failure",
+      code: "operation_failed",
+      message: `${action.type} failed. ${detail}`.slice(0, 2_048),
+    }
   const navigation = ["tabs.open", "navigate", "back", "forward", "reload"].includes(action.type)
   const network = navigation ? detail.match(/\bERR_[A-Z_]+\b/)?.[0] : undefined
   const hint =

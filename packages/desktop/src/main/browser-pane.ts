@@ -10,6 +10,7 @@ import { BrowserPaneEvent } from "../shared/ipc-rpc/events"
 import { createBrowserPage, destinationOrigin, type BrowserPage } from "./browser-chromium"
 import { browserFailure } from "./browser/errors"
 import { createBrowserNetwork, type BrowserNetwork } from "./browser/network"
+import { executeComputerAction } from "./computer-use"
 import { emitIpcEvent } from "./ipc-events"
 
 type Entry = {
@@ -169,7 +170,7 @@ export function createBrowserPane() {
               receive,
               Stream.fromQueue(outbound).pipe(Stream.runForEach((send) => send)),
               Deferred.await(connected).pipe(
-                Effect.andThen(rpc.attach({ ...attachment, version: 4 }, options)),
+                Effect.andThen(rpc.attach({ ...attachment, version: 5 }, options)),
                 Effect.tap((result) =>
                   Effect.sync(() => {
                     if (result === "replaced") reason = "browser.pane.replaced"
@@ -328,6 +329,7 @@ export function createBrowserPane() {
       throw new Error(
         "Browser request was cancelled. Do not repeat a mutating action until you have inspected its outcome.",
       )
+    if (Browser.isComputerAction(action)) return executeComputerAction(action, signal)
     if (action.type === "tabs.list") return { value: state(), files: [] }
     if (action.type === "tabs.open") {
       const page = create(entry)

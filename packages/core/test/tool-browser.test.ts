@@ -57,7 +57,12 @@ describe("BrowserTool registration", () => {
       const paths = codeModeListings(catalog)
         .map((entry) => entry.path)
         .sort()
-      expect(paths).toEqual(Browser.Operations.map((operation) => `browser.${operation.name}`).sort())
+      expect(paths).toEqual(
+        [
+          ...Browser.Operations.map((operation) => `browser.${operation.name}`),
+          ...Browser.ComputerOperations.map((operation) => operation.name),
+        ].sort(),
+      )
     }),
   )
 
@@ -67,6 +72,15 @@ describe("BrowserTool registration", () => {
       const toolSet = yield* registry.snapshot()
       const result = yield* toolSet.execute(call("return await tools.browser.tabs.list({})"))
       expect(JSON.stringify(result)).toContain("[browser.disconnected]")
+    }),
+  )
+
+  it.effect("fails computer actions without a connected desktop as a typed tool error", () =>
+    Effect.gen(function* () {
+      const registry = yield* Tool.Service
+      const toolSet = yield* registry.snapshot()
+      const result = yield* toolSet.execute(call("return await tools.computer.screenshot({})", "call-computer"))
+      expect(JSON.stringify(result)).toContain("[computer.disconnected]")
     }),
   )
 })

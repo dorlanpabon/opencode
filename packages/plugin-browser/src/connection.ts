@@ -73,7 +73,7 @@ export const make = Effect.fn("BrowserConnection.make")(function* (
             (browser) => (browsers.get(input.sessionID) === browser ? close(input.sessionID) : Effect.void),
           )
           yield* rpc.events
-            .emit("control", { type: "attached", connectionID: input.connectionID, version: 4 })
+            .emit("control", { type: "attached", connectionID: input.connectionID, version: 5 })
             .pipe(Effect.orDie)
           return yield* Deferred.await(browser.closed)
         }).pipe(Effect.scoped),
@@ -103,7 +103,9 @@ export const make = Effect.fn("BrowserConnection.make")(function* (
           if (input.outcome.type === "failure")
             return yield* Deferred.fail(
               pending.result,
-              new Tool.Error({ message: `[browser.${input.outcome.code}] ${input.outcome.message}` }),
+              new Tool.Error({
+                message: `[${Browser.isComputerAction(pending.command.action) ? "computer" : "browser"}.${input.outcome.code}] ${input.outcome.message}`,
+              }),
             ).pipe(Effect.asVoid)
           yield* Deferred.succeed(pending.result, input.outcome.result)
         }).pipe(Effect.asVoid),
@@ -140,8 +142,9 @@ export const make = Effect.fn("BrowserConnection.make")(function* (
       const browser = browsers.get(sessionID)
       if (!browser)
         return yield* new Tool.Error({
-          message:
-            "[browser.disconnected] No desktop browser is connected to this session. Open this session in the desktop app, enable the experimental browser setting, and wait for it to connect. Then call browser.tabs.list({}). Repeating browser actions while disconnected will not help.",
+          message: Browser.isComputerAction(action)
+            ? "[computer.disconnected] No desktop computer-use host is connected to this session. Open it in the Windows desktop app and enable Computer use and browser in Experimental settings. Repeating input actions while disconnected will not help."
+            : "[browser.disconnected] No desktop browser is connected to this session. Open this session in the desktop app, enable the experimental browser setting, and wait for it to connect. Then call browser.tabs.list({}). Repeating browser actions while disconnected will not help.",
         })
       const tab = "tabID" in action ? browser.state.tabs.find((tab) => tab.id === action.tabID) : undefined
       if ("tabID" in action && !tab)
@@ -195,7 +198,7 @@ const request = Effect.fn("BrowserConnection.request")(function* (
     Effect.mapError(
       (error) =>
         new Tool.Error({
-          message: `Could not dispatch browser.${action.type}. Check the desktop connection and call browser.tabs.list({}) before deciding whether to retry.`,
+          message: `Could not dispatch ${toolName(action)}. Check the desktop connection before deciding whether to retry.`,
           error,
         }),
     ),
@@ -217,9 +220,13 @@ const request = Effect.fn("BrowserConnection.request")(function* (
       duration: "60 seconds",
       orElse: () =>
         new Tool.Error({
-          message: `[browser.timeout] browser.${action.type} did not finish within 60 seconds; its outcome is unknown. Check the desktop connection, call browser.tabs.list({}), and inspect the tab or browser.files.list({tabID}) for completed work. Do not blindly repeat a mutating action or start another recording.`,
+          message: `[desktop.timeout] ${toolName(action)} did not finish within 60 seconds; its outcome is unknown. Inspect the screen or tab before repeating a mutating action.`,
         }),
     }),
     Effect.ensuring(Effect.sync(() => browser.pending.delete(requestID))),
   )
 })
+
+function toolName(action: Browser.Action) {
+  return Browser.isComputerAction(action) ? action.type : `browser.${action.type}`
+}

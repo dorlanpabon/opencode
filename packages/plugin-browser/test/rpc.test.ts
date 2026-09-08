@@ -50,9 +50,24 @@ test("network lifecycle and RPC version are explicit", () => {
     Schema.decodeUnknownSync(Browser.Control)({ type: "attached", connectionID: "old-client", version: 3 }),
   ).toThrow()
   expect(() =>
-    Schema.decodeUnknownSync(Browser.Control)({ type: "attached", connectionID: "old-client", version: 2 }),
+    Schema.decodeUnknownSync(Browser.Control)({ type: "attached", connectionID: "old-client", version: 4 }),
   ).toThrow()
+  expect(
+    Schema.decodeUnknownSync(Browser.Control)({ type: "attached", connectionID: "current-client", version: 5 }),
+  ).toMatchObject({ version: 5 })
   expect(Schema.decodeUnknownSync(Browser.Definition.methods.attach.output)("replaced")).toBe("replaced")
+})
+
+test("computer use actions are bounded and distinct from browser page actions", () => {
+  const decode = Schema.decodeUnknownSync(Browser.Action)
+  expect(Browser.ComputerOperations.map((operation) => operation.name)).toContain("computer.screenshot")
+  expect(Browser.isComputerAction(decode({ type: "computer.cursor_position" }))).toBe(true)
+  expect(decode({ type: "computer.click", x: -20, y: 10 })).toMatchObject({ type: "computer.click" })
+  expect(() => decode({ type: "computer.screenshot", maxWidth: 100 })).toThrow()
+  expect(() =>
+    decode({ type: "computer.key", key: "x", modifiers: ["Control", "Control", "Control", "Control", "Control"] }),
+  ).toThrow()
+  expect(() => decode({ type: "computer.type", text: "x".repeat(10_001) })).toThrow()
 })
 
 test("network RPC is bounded bytes and does not add model tools", () => {

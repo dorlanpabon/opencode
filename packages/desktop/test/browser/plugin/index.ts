@@ -26,7 +26,7 @@ export default Plugin.define({
         .transform((editor) => {
           editor
             .list()
-            .filter((tool) => tool.options?.namespace?.startsWith("browser"))
+            .filter((tool) => ["browser", "computer"].some((namespace) => tool.options?.namespace?.startsWith(namespace)))
             .forEach((tool) => tools.set(tool.id, tool))
         })
         .pipe(Effect.orDie)
