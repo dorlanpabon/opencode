@@ -1,5 +1,4 @@
-import { createEffect, createMemo, createResource, onCleanup, onMount, type Accessor } from "solid-js"
-import { createStore } from "solid-js/store"
+import { createMemo, createResource, onMount, type Accessor } from "solid-js"
 import type { ColorScheme } from "@opencode-ai/ui/theme/context"
 import { useTheme } from "@opencode-ai/ui/theme/context"
 import {
@@ -15,7 +14,7 @@ import {
   useSettings,
 } from "@/settings/model"
 import { playSoundById, SOUND_OPTIONS } from "@/shell/notifications/sound"
-import { createSoundPreviewController, type ShellOption } from "./behavior"
+import { createCustomInstructionsDraftController, createSoundPreviewController, type ShellOption } from "./behavior"
 import { ServerConnection } from "@/runtime/server/registry"
 import { useServerCtx } from "@/runtime/server/runtime"
 
@@ -51,39 +50,10 @@ export function createCustomInstructionsSettingsController(server: Accessor<Serv
     const value = serverCtx()?.sync.data.config.customInstructions
     return typeof value === "string" ? value : ""
   })
-  const [store, setStore] = createStore({ draft: "", dirty: false })
-  createEffect(() => {
-    if (store.dirty) return
-    setStore("draft", saved())
+  return createCustomInstructionsDraftController({
+    saved,
+    persist: (value) => serverCtx()?.sync.updateConfig({ customInstructions: value }),
   })
-  let timer: ReturnType<typeof setTimeout> | undefined
-  let pending: string | undefined
-  const save = () => {
-    if (timer !== undefined) clearTimeout(timer)
-    timer = undefined
-    const next = pending
-    pending = undefined
-    if (next === undefined) return
-    void serverCtx()
-      ?.sync.updateConfig({ customInstructions: next })
-      .then(() => {
-        if (store.draft === next && pending === undefined) setStore("dirty", false)
-      })
-      .catch(() => undefined)
-  }
-  onCleanup(() => {
-    save()
-  })
-  return {
-    draft: () => store.draft,
-    flush: save,
-    update: (next: string) => {
-      setStore({ draft: next, dirty: true })
-      if (timer !== undefined) clearTimeout(timer)
-      pending = next
-      timer = setTimeout(save, 500)
-    },
-  }
 }
 
 export function createAppearanceSettingsController() {

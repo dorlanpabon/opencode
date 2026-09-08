@@ -8,17 +8,17 @@ import type { CustomInstructionsSettingsController } from "./controllers"
 export const CustomInstructionsSetting: Component<{ controller: CustomInstructionsSettingsController }> = (props) => {
   const language = useLanguage()
   return (
-    <div class="settings-section">
+    <div class="settings-section settings-custom-instructions">
       <h3 class="settings-section-title">{language.t("settings.customInstructions.title")}</h3>
       <SettingsList>
         <SettingsRow
           title={language.t("settings.customInstructions.title")}
           description={language.t("settings.customInstructions.description")}
         >
-          <div class="w-full">
+          <div class="settings-custom-instructions-field">
             <Textarea
               data-action="settings-custom-instructions"
-              rows={5}
+              rows={8}
               value={props.controller.draft()}
               placeholder={language.t("settings.customInstructions.placeholder")}
               aria-label={language.t("settings.customInstructions.title")}

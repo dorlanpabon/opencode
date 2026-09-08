@@ -1,4 +1,5 @@
-import { onCleanup } from "solid-js"
+import { createEffect, on, onCleanup, type Accessor } from "solid-js"
+import { createStore } from "solid-js/store"
 
 export type ShellOption = {
   path: string
@@ -35,6 +36,54 @@ export function createShellOptions(input: { shells: ShellOption[]; current: stri
     options.push({ id: input.current, value: input.current, name: input.current, terminalOnly: false })
   }
   return options
+}
+
+export function createCustomInstructionsDraftController(input: {
+  saved: Accessor<string>
+  persist: (value: string) => Promise<unknown> | undefined
+  delay?: number
+}) {
+  const [store, setStore] = createStore({ draft: "", dirty: false })
+  createEffect(
+    on(input.saved, (value) => {
+      if (store.dirty) return
+      setStore("draft", value)
+    }),
+  )
+
+  let timer: ReturnType<typeof setTimeout> | undefined
+  let pending: string | undefined
+  const flush = () => {
+    clearTimeout(timer)
+    timer = undefined
+    const next = pending
+    pending = undefined
+    if (next === undefined) return
+    const request = input.persist(next)
+    if (!request) {
+      pending = next
+      return
+    }
+    void request
+      .then(() => {
+        if (store.draft === next && pending === undefined) setStore("dirty", false)
+      })
+      .catch(() => {
+        if (store.draft === next && pending === undefined) pending = next
+      })
+  }
+
+  onCleanup(flush)
+  return {
+    draft: () => store.draft,
+    flush,
+    update(next: string) {
+      setStore({ draft: next, dirty: true })
+      clearTimeout(timer)
+      pending = next
+      timer = setTimeout(flush, input.delay ?? 500)
+    },
+  }
 }
 
 export function createSoundPreviewController(player: (id: string | undefined) => Promise<(() => void) | undefined>) {

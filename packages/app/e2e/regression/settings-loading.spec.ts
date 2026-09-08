@@ -56,6 +56,45 @@ test("settings has its own route and returns through app history", async ({ page
   await expect(home).toHaveAttribute("aria-pressed", "true")
 })
 
+test("custom instructions stay visible after saving and reopening settings", async ({ page }) => {
+  let instructions = "Existing custom instructions"
+  await page.route("**/api/config/global", async (route) => {
+    if (route.request().method() === "PATCH") {
+      const body = route.request().postDataJSON() as { customInstructions?: string }
+      instructions = body.customInstructions ?? instructions
+    }
+    await route.fulfill({ json: { customInstructions: instructions } })
+  })
+  await page.reload()
+
+  const settings = page.getByTestId("settings-screen")
+  const field = settings.getByRole("textbox", { name: "Custom instructions", exact: true })
+  await expect(field).toHaveValue(instructions)
+
+  await field.fill("Keep this text visible")
+  await expect.poll(() => instructions).toBe("Keep this text visible")
+  await expect(field).toHaveValue("Keep this text visible")
+
+  await settings.getByRole("button", { name: "Back to app", exact: true }).click()
+  await page.getByRole("button", { name: "Settings", exact: true }).click()
+  await expect(field).toHaveValue("Keep this text visible")
+
+  const layout = await field.evaluate((element) => {
+    const row = element.closest('[data-component="settings-row"]')
+    const copy = row?.querySelector('[data-slot="settings-row-copy"]')
+    const control = row?.querySelector('[data-slot="settings-row-control"]')
+    const fieldRect = element.getBoundingClientRect()
+    return {
+      fieldWidth: fieldRect.width,
+      controlWidth: control?.getBoundingClientRect().width ?? 0,
+      copyBottom: copy?.getBoundingClientRect().bottom ?? 0,
+      fieldTop: fieldRect.top,
+    }
+  })
+  expect(Math.abs(layout.fieldWidth - layout.controlWidth)).toBeLessThan(4)
+  expect(layout.copyBottom).toBeLessThanOrEqual(layout.fieldTop)
+})
+
 test("new session shortcut leaves settings and opens a new session screen", async ({ page }) => {
   const settings = page.getByTestId("settings-screen")
   await expect(settings).toBeFocused()

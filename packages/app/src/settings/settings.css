@@ -382,6 +382,32 @@
   }
 }
 
+.settings-custom-instructions [data-component="settings-row"] {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.settings-custom-instructions [data-slot="settings-row-copy"],
+.settings-custom-instructions [data-slot="settings-row-control"],
+.settings-custom-instructions-field,
+.settings-custom-instructions [data-component="textarea-v2"] {
+  width: 100%;
+}
+
+.settings-custom-instructions [data-slot="settings-row-control"] {
+  justify-content: stretch;
+}
+
+.settings-custom-instructions-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-custom-instructions [data-component="textarea-v2"] {
+  min-height: 160px;
+}
+
 [data-slot="settings-row-control"] [data-component="text-input-v2"] {
   width: 100%;
 }
