@@ -1973,7 +1973,13 @@ export type ConfigEntry =
           }
         }
         compaction?: { auto?: boolean; keep?: { tokens?: number }; buffer?: number }
-        infinite?: { maxIterations?: number; maxHours?: number; sentinel?: string; todoDetection?: boolean }
+        infinite?: {
+          maxIterations?: number
+          maxHours?: number
+          sentinel?: string
+          goalTracking?: boolean
+          todoDetection?: boolean
+        }
         skills?: Array<string>
         commands?: {
           [x: string]: {
@@ -6403,7 +6409,13 @@ export type ConfigGlobalOutput = {
     }
   }
   compaction?: { auto?: boolean; keep?: { tokens?: number }; buffer?: number }
-  infinite?: { maxIterations?: number; maxHours?: number; sentinel?: string; todoDetection?: boolean }
+  infinite?: {
+    maxIterations?: number
+    maxHours?: number
+    sentinel?: string
+    goalTracking?: boolean
+    todoDetection?: boolean
+  }
   skills?: Array<string>
   commands?: {
     [x: string]: {
@@ -6589,6 +6601,7 @@ export type ConfigUpdateInput = {
       readonly maxIterations?: number
       readonly maxHours?: number
       readonly sentinel?: string
+      readonly goalTracking?: boolean
       readonly todoDetection?: boolean
     }
     readonly skills?: ReadonlyArray<string>
@@ -6772,7 +6785,13 @@ export type ConfigUpdateOutput = {
     }
   }
   compaction?: { auto?: boolean; keep?: { tokens?: number }; buffer?: number }
-  infinite?: { maxIterations?: number; maxHours?: number; sentinel?: string; todoDetection?: boolean }
+  infinite?: {
+    maxIterations?: number
+    maxHours?: number
+    sentinel?: string
+    goalTracking?: boolean
+    todoDetection?: boolean
+  }
   skills?: Array<string>
   commands?: {
     [x: string]: {

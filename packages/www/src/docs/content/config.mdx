@@ -343,17 +343,17 @@ Control infinite agent mode auto-continue limits through the `infinite` option.
     "maxIterations": 100,
     "maxHours": 8,
     "sentinel": "[TASK_COMPLETE]",
-    "todoDetection": true
-  }
+    "goalTracking": true,
+  },
 }
 ```
 
 - `maxIterations` - Maximum auto-continue iterations before stopping (default: `100`).
 - `maxHours` - Maximum wall-clock hours before stopping (default: `8`).
 - `sentinel` - Completion marker the agent emits when the task is fully complete (default: `"[TASK_COMPLETE]"`).
-- `todoDetection` - Stop when all todos are completed or cancelled (default: `true`).
+- `goalTracking` - Require the tracked OpenCode goal and objectives to be complete before stopping (default: `true`). `todoDetection` remains a deprecated compatibility alias.
 
-Use the Mode toggle in the composer footer to switch between `Complete` and `Infinite` per session. The existing Stop button interrupts the loop at any time.
+Use the Mode toggle in the composer footer to switch between `Complete` and `Infinite` per session. Infinite creates a primary goal, maintains ordered objectives, and can add or revise objectives as it discovers more required work. The existing Stop button interrupts the loop at any time.
 
 ### Session warming
 

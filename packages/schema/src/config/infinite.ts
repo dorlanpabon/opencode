@@ -13,7 +13,10 @@ export class Info extends Schema.Class<Info>("Config.Infinite")({
   sentinel: Schema.String.pipe(optional).annotate({
     description: "Completion marker the agent emits when the task is fully complete",
   }),
+  goalTracking: Schema.Boolean.pipe(optional).annotate({
+    description: "Require the tracked OpenCode goal and objectives to be complete before stopping",
+  }),
   todoDetection: Schema.Boolean.pipe(optional).annotate({
-    description: "Stop when all todos are completed or cancelled",
+    description: "Deprecated alias for goalTracking",
   }),
 }) {}

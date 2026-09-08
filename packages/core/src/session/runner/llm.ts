@@ -14,8 +14,8 @@ import { SessionContext } from "../context.js"
 import { SessionEvent } from "../event.js"
 import { SessionInbox } from "../inbox.js"
 import { SessionHistory } from "../history.js"
+import { SessionGoal } from "../goal.js"
 import { SessionInfinite } from "../infinite.js"
-import { SessionTodo } from "../todo.js"
 import { SessionModelRequest } from "../model-request.js"
 import { SessionModelTransport } from "../model-transport.js"
 import { SessionMessage } from "../message.js"
@@ -80,14 +80,19 @@ const layer = Layer.effect(
       const assistant = yield* lastAssistant(sessionID)
       if (assistant?.error !== undefined) return false
       const text = assistant?.content.flatMap((part) => (part.type === "text" ? [part.text] : [])).join("\n") ?? ""
-      if (SessionInfinite.containsSentinel(text, settings.sentinel)) return false
-      if (settings.todoDetection) {
-        const current = yield* SessionTodo.get(db, sessionID)
-        if (SessionInfinite.isTerminated(current)) return false
-      }
+      const goal = SessionGoal.get(sessionID)
+      if (
+        !SessionInfinite.shouldContinue({
+          text,
+          sentinel: settings.sentinel,
+          goalTracking: settings.goalTracking,
+          goal,
+        })
+      )
+        return false
       yield* bus.publish(SessionEvent.Synthetic, {
         sessionID,
-        text: SessionInfinite.continuationPrompt(settings.sentinel),
+        text: SessionInfinite.continuationPrompt(settings.sentinel, settings.goalTracking),
       })
       SessionInfinite.recordIteration(sessionID)
       return true

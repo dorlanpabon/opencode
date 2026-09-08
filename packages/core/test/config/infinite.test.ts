@@ -17,7 +17,7 @@ describe("Infinite config", () => {
         maxIterations: 100,
         maxHours: 8,
         sentinel: "[TASK_COMPLETE]",
-        todoDetection: true,
+        goalTracking: true,
       })
     }),
   )
@@ -27,14 +27,15 @@ describe("Infinite config", () => {
       const resolved = SessionInfinite.resolve([
         new ConfigInfinite.Info({ maxIterations: 5 }),
         new ConfigInfinite.Info({ sentinel: "DONE", maxHours: 2 }),
-        new ConfigInfinite.Info({ todoDetection: false }),
+        new ConfigInfinite.Info({ goalTracking: false }),
       ])
       expect(resolved).toEqual({
         maxIterations: 5,
         maxHours: 2,
         sentinel: "DONE",
-        todoDetection: false,
+        goalTracking: false,
       })
+      expect(SessionInfinite.resolve([new ConfigInfinite.Info({ todoDetection: false })]).goalTracking).toBe(false)
     }),
   )
 

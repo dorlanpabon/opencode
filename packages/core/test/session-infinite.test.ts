@@ -1,21 +1,28 @@
 import { afterEach, describe, expect, test } from "bun:test"
 import { ConfigInfinite } from "@opencode-ai/schema/config/infinite"
+import { SessionGoal } from "@opencode-ai/core/session/goal"
 import { SessionInfinite } from "@opencode-ai/core/session/infinite"
 
 const sessionID = "ses_infinite_test" as never
 
 afterEach(() => {
   SessionInfinite.clear()
+  SessionGoal.clear()
 })
 
 describe("SessionInfinite", () => {
-  test("appends sentinel instruction only when missing", () => {
+  test("appends the goal protocol and sentinel only once", () => {
     const sentinel = SessionInfinite.Defaults.sentinel
     const withInstruction = SessionInfinite.withSentinelInstruction("Build the feature", sentinel)
     expect(withInstruction).toContain("Build the feature")
+    expect(withInstruction).toContain(SessionInfinite.GoalMarker)
     expect(withInstruction).toContain(sentinel)
-    const already = SessionInfinite.withSentinelInstruction(`Done ${sentinel}`, sentinel)
-    expect(already).toBe(`Done ${sentinel}`)
+    expect(SessionInfinite.goalFromPrompt(withInstruction)).toBe("Build the feature")
+    const already = SessionInfinite.withSentinelInstruction(withInstruction, sentinel)
+    expect(already).toBe(withInstruction)
+    const untracked = SessionInfinite.withSentinelInstruction("Build the feature", "[DONE]", false)
+    expect(untracked).not.toContain(SessionInfinite.GoalMarker)
+    expect(untracked).toContain("[DONE]")
   })
 
   test("detects sentinel in assistant text", () => {
@@ -23,17 +30,37 @@ describe("SessionInfinite", () => {
     expect(SessionInfinite.containsSentinel("Still working", "[TASK_COMPLETE]")).toBe(false)
   })
 
-  test("terminates when todos are done even without sentinel", () => {
-    expect(SessionInfinite.isTerminated([])).toBe(true)
-    expect(SessionInfinite.isTerminated([{ status: "completed" }, { status: "cancelled" }])).toBe(true)
-    expect(SessionInfinite.isTerminated([{ status: "completed" }, { status: "pending" }])).toBe(false)
+  test("terminates only when the tracked goal is inactive", () => {
+    expect(SessionInfinite.isTerminated(undefined)).toBe(false)
+    expect(SessionInfinite.isTerminated({ active: true })).toBe(false)
+    expect(SessionInfinite.isTerminated({ active: false })).toBe(true)
   })
 
-  test("continues when sentinel is missing and todos remain open", () => {
-    const text = "Still working"
-    const todos = [{ status: "in_progress" }]
-    expect(SessionInfinite.containsSentinel(text, SessionInfinite.Defaults.sentinel)).toBe(false)
-    expect(SessionInfinite.isTerminated(todos)).toBe(false)
+  test("continues while the tracked goal remains active", () => {
+    expect(
+      SessionInfinite.shouldContinue({
+        text: "Claimed done [TASK_COMPLETE]",
+        sentinel: "[TASK_COMPLETE]",
+        goalTracking: true,
+        goal: { active: true },
+      }),
+    ).toBe(true)
+    expect(
+      SessionInfinite.shouldContinue({
+        text: "Verified",
+        sentinel: "[TASK_COMPLETE]",
+        goalTracking: true,
+        goal: { active: false },
+      }),
+    ).toBe(false)
+    expect(
+      SessionInfinite.shouldContinue({
+        text: "Done [TASK_COMPLETE]",
+        sentinel: "[TASK_COMPLETE]",
+        goalTracking: true,
+        goal: undefined,
+      }),
+    ).toBe(false)
   })
 
   test("tracks enable, progress, and limits", () => {
@@ -61,5 +88,7 @@ describe("SessionInfinite", () => {
   test("builds continuation prompt with sentinel", () => {
     const prompt = SessionInfinite.continuationPrompt("[TASK_COMPLETE]")
     expect(prompt).toContain("[TASK_COMPLETE]")
+    expect(prompt).toContain("OpenCode goal")
+    expect(prompt).toContain("create or revise objectives")
   })
 })
